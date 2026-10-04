@@ -1,0 +1,259 @@
+{
+ "meta": {
+  "experiment": "exp5_tarpit",
+  "tag": "",
+  "scenario": {
+   "name": "exp5_tarpit",
+   "description": "Experiment 5 - tarpit: naive API-scraping bots vs UI-mimicking bots (plus humans). Share of bots caught by the decoy endpoint.",
+   "policy": "fcfs",
+   "humans": 4000,
+   "operators": [
+    {
+     "id": "scrapers",
+     "profile": "API_SCRAPER",
+     "identities": 300,
+     "ip_pool": 5,
+     "params": {
+      "fallback": 0
+     },
+     "start": "open"
+    },
+    {
+     "id": "ui-mimic",
+     "profile": "UI_MIMIC",
+     "identities": 300,
+     "ip_pool": 50,
+     "params": {},
+     "start": "uniform"
+    }
+   ],
+   "tiers": [
+    {
+     "id": "gold",
+     "name": "Gold",
+     "price_cents": 25000,
+     "seats": 100
+    },
+    {
+     "id": "silver",
+     "name": "Silver",
+     "price_cents": 15000,
+     "seats": 150
+    },
+    {
+     "id": "general",
+     "name": "General",
+     "price_cents": 8000,
+     "seats": 250
+    }
+   ],
+   "window_sec": 40,
+   "arrival": "rush",
+   "concurrency": 1500,
+   "processes": 4,
+   "seed": 7,
+   "identity_cost_usd": 3.0,
+   "kill_replica_at_s": null,
+   "malicious": false,
+   "claims": false,
+   "claim_sec": 20,
+   "human_claim_rate": 0.9,
+   "tag": ""
+  },
+  "started": "2026-10-03T16:58:33",
+  "duration_s": 42.4,
+  "drop_id": "exp-exp5_tarpit-fcfs-4866bd",
+  "policy": "fcfs",
+  "population": 50000,
+  "identity_cost_usd": 3.0,
+  "actors": 4600,
+  "operators": 2
+ },
+ "traffic": {
+  "humans": 4000,
+  "bot_identities": 600,
+  "operators": {
+   "scrapers": {
+    "profile": "API_SCRAPER",
+    "ip_pool": 5
+   },
+   "ui-mimic": {
+    "profile": "UI_MIMIC",
+    "ip_pool": 50
+   }
+  },
+  "client_requests": 22899,
+  "client_events": {},
+  "receipts_issued_to_clients": 0
+ },
+ "latency": {
+  "POST /test/login": {
+   "requests": 4600,
+   "p50_ms": 1.15,
+   "p95_ms": 30.92,
+   "p99_ms": 47.25,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 0,
+   "rps": 108.36386296439257,
+   "status": {
+    "200": 4600
+   }
+  },
+  "GET /drops/{id}": {
+   "requests": 4300,
+   "p50_ms": 0.8,
+   "p95_ms": 13.0,
+   "p99_ms": 20.73,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 0,
+   "rps": 101.29665451019306,
+   "status": {
+    "200": 4300
+   }
+  },
+  "POST /baseline/{id}/buy": {
+   "requests": 13999,
+   "p50_ms": 7.47,
+   "p95_ms": 18.79,
+   "p99_ms": 32.87,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 13499,
+   "rps": 329.7795038344634,
+   "status": {
+    "200": 500,
+    "409": 4179,
+    "429": 9320
+   }
+  }
+ },
+ "counters": {
+  "rate_limited": 9320,
+  "sold_out_rejects": 4156
+ },
+ "extras": {},
+ "policies": {
+  "fcfs_live": {
+   "seats_total": 500,
+   "seats_by_kind": {
+    "bot": 100,
+    "human": 400
+   },
+   "seats_by_operator": {
+    "scrapers": 100,
+    "humans": 400
+   },
+   "identities_by_kind": {
+    "bot": 581,
+    "human": 4000
+   },
+   "requests_by_kind": {
+    "bot": 679,
+    "human": 4000
+   },
+   "bot_seat_share": 0.2,
+   "bot_identity_share": 0.1268282034490286,
+   "bot_advantage_ratio": 1.576936316695353,
+   "humans_entered": 4000,
+   "humans_won": 400,
+   "human_win_rate": 0.1,
+   "operators": {
+    "humans": {
+     "identities": 4000,
+     "seats": 400,
+     "seats_per_identity": 0.1,
+     "identity_spend_usd": 12000.0,
+     "cost_per_seat_usd": 30.0,
+     "identities_per_seat": 10.0
+    },
+    "scrapers": {
+     "identities": 281,
+     "seats": 100,
+     "seats_per_identity": 0.35587188612099646,
+     "identity_spend_usd": 843.0,
+     "cost_per_seat_usd": 8.43,
+     "identities_per_seat": 2.81
+    },
+    "ui-mimic": {
+     "identities": 300,
+     "seats": 0,
+     "seats_per_identity": 0.0,
+     "identity_spend_usd": 900.0,
+     "cost_per_seat_usd": null,
+     "identities_per_seat": null
+    }
+   },
+   "max_seats_one_actor": 4
+  }
+ },
+ "integrity": {
+  "audit_chain": {
+   "ok": true,
+   "length": 537991,
+   "head_hash": "ec17aed988ae7eceda5022c1b36039e2dde2db475e1040866916efef5aadf7a5"
+  },
+  "drop_id": "exp-exp5_tarpit-fcfs-4866bd",
+  "info": {
+   "allocations_pg": 0,
+   "blocked_duplicate_seat_attempts": 0,
+   "entries_registered": 0,
+   "illegal_transitions_rejected": 0,
+   "ledger_lag": 0,
+   "rejected_reused_tokens": 0,
+   "seats_owned_redis": 0,
+   "tokens_issued": 0
+  },
+  "ok": true,
+  "total_violations": 0,
+  "violations": {
+   "broken_merkle": 0,
+   "duplicate_entries": 0,
+   "duplicate_seats": 0,
+   "invalid_transitions": 0,
+   "missing_receipts": null,
+   "oversold": 0
+  }
+ },
+ "headline": {
+  "policy": "fcfs",
+  "tag": "",
+  "actors": 4600,
+  "humans": 4000,
+  "bot_identities": 600,
+  "duration_s": 42.4,
+  "client_requests": 22899,
+  "bot_advantage_ratio": {
+   "fcfs": null,
+   "naive": null,
+   "fairdrop": null,
+   "fcfs_live": 1.576936316695353
+  },
+  "human_win_rate": {
+   "fcfs": null,
+   "naive": null,
+   "fairdrop": null,
+   "fcfs_live": 0.1
+  },
+  "bot_seat_share": {
+   "fcfs": null,
+   "naive": null,
+   "fairdrop": null,
+   "fcfs_live": 0.2
+  },
+  "integrity_ok": true,
+  "integrity_violations": {
+   "broken_merkle": 0,
+   "duplicate_entries": 0,
+   "duplicate_seats": 0,
+   "invalid_transitions": 0,
+   "missing_receipts": null,
+   "oversold": 0
+  },
+  "verified_by_reference_verifier": null,
+  "p99_ms": {
+   "/baseline/{id}/buy": 32.87
+  }
+ }
+}

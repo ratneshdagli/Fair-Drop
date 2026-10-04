@@ -1,0 +1,237 @@
+{
+ "meta": {
+  "experiment": "exp3_sybil_scaling",
+  "tag": "identities=100",
+  "scenario": {
+   "name": "exp3_sybil_scaling",
+   "description": "Experiment 3 - Sybil scaling: one operator buys 100 verified identities.",
+   "policy": "fcfs",
+   "humans": 4900,
+   "operators": [
+    {
+     "id": "sybil",
+     "profile": "SYBIL_OPERATOR",
+     "identities": 100,
+     "ip_pool": 5000,
+     "params": {
+      "requests": 3
+     },
+     "start": "open"
+    }
+   ],
+   "tiers": [
+    {
+     "id": "gold",
+     "name": "Gold",
+     "price_cents": 25000,
+     "seats": 100
+    },
+    {
+     "id": "silver",
+     "name": "Silver",
+     "price_cents": 15000,
+     "seats": 150
+    },
+    {
+     "id": "general",
+     "name": "General",
+     "price_cents": 8000,
+     "seats": 250
+    }
+   ],
+   "window_sec": 15.0,
+   "arrival": "rush",
+   "concurrency": 2000,
+   "processes": 4,
+   "seed": 7,
+   "identity_cost_usd": 3.0,
+   "kill_replica_at_s": null,
+   "malicious": false,
+   "claims": false,
+   "claim_sec": 20,
+   "human_claim_rate": 0.9,
+   "tag": "identities=100"
+  },
+  "started": "2026-10-03T17:32:26",
+  "duration_s": 17.2,
+  "drop_id": "exp-exp3_sybil_scaling-fcfs-e86715",
+  "policy": "fcfs",
+  "population": 50000,
+  "identity_cost_usd": 3.0,
+  "actors": 5000,
+  "operators": 1
+ },
+ "traffic": {
+  "humans": 4900,
+  "bot_identities": 100,
+  "operators": {
+   "sybil": {
+    "profile": "SYBIL_OPERATOR",
+    "ip_pool": 5000
+   }
+  },
+  "client_requests": 14967,
+  "client_events": {},
+  "receipts_issued_to_clients": 0
+ },
+ "latency": {
+  "POST /test/login": {
+   "requests": 5000,
+   "p50_ms": 1.08,
+   "p95_ms": 15.58,
+   "p99_ms": 27.39,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 0,
+   "rps": 290.6960658435283,
+   "status": {
+    "200": 5000
+   }
+  },
+  "GET /drops/{id}": {
+   "requests": 4900,
+   "p50_ms": 0.82,
+   "p95_ms": 5.49,
+   "p99_ms": 11.52,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 0,
+   "rps": 284.8821445266577,
+   "status": {
+    "200": 4900
+   }
+  },
+  "POST /baseline/{id}/buy": {
+   "requests": 5067,
+   "p50_ms": 1.24,
+   "p95_ms": 2.52,
+   "p99_ms": 19.32,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 4567,
+   "rps": 294.5913931258316,
+   "status": {
+    "200": 500,
+    "409": 4567
+   }
+  }
+ },
+ "counters": {
+  "sold_out_rejects": 4567
+ },
+ "extras": {},
+ "policies": {
+  "fcfs_live": {
+   "seats_total": 500,
+   "seats_by_kind": {
+    "bot": 100,
+    "human": 400
+   },
+   "seats_by_operator": {
+    "sybil": 100,
+    "humans": 400
+   },
+   "identities_by_kind": {
+    "human": 4900,
+    "bot": 100
+   },
+   "requests_by_kind": {
+    "human": 4900,
+    "bot": 167
+   },
+   "bot_seat_share": 0.2,
+   "bot_identity_share": 0.02,
+   "bot_advantage_ratio": 10.0,
+   "humans_entered": 4900,
+   "humans_won": 400,
+   "human_win_rate": 0.08163265306122448,
+   "operators": {
+    "humans": {
+     "identities": 4900,
+     "seats": 400,
+     "seats_per_identity": 0.08163265306122448,
+     "identity_spend_usd": 14700.0,
+     "cost_per_seat_usd": 36.75,
+     "identities_per_seat": 12.25
+    },
+    "sybil": {
+     "identities": 100,
+     "seats": 100,
+     "seats_per_identity": 1.0,
+     "identity_spend_usd": 300.0,
+     "cost_per_seat_usd": 3.0,
+     "identities_per_seat": 1.0
+    }
+   },
+   "max_seats_one_actor": 3
+  }
+ },
+ "integrity": {
+  "audit_chain": {
+   "ok": true,
+   "length": 594148,
+   "head_hash": "c17e491d43d1a18952f3315ee3d8449ce67f4b9ccd0141deff4378cc29002612"
+  },
+  "drop_id": "exp-exp3_sybil_scaling-fcfs-e86715",
+  "info": {
+   "allocations_pg": 0,
+   "blocked_duplicate_seat_attempts": 0,
+   "entries_registered": 0,
+   "illegal_transitions_rejected": 0,
+   "ledger_lag": 0,
+   "rejected_reused_tokens": 0,
+   "seats_owned_redis": 0,
+   "tokens_issued": 0
+  },
+  "ok": true,
+  "total_violations": 0,
+  "violations": {
+   "broken_merkle": 0,
+   "duplicate_entries": 0,
+   "duplicate_seats": 0,
+   "invalid_transitions": 0,
+   "missing_receipts": null,
+   "oversold": 0
+  }
+ },
+ "headline": {
+  "policy": "fcfs",
+  "tag": "identities=100",
+  "actors": 5000,
+  "humans": 4900,
+  "bot_identities": 100,
+  "duration_s": 17.2,
+  "client_requests": 14967,
+  "bot_advantage_ratio": {
+   "fcfs": null,
+   "naive": null,
+   "fairdrop": null,
+   "fcfs_live": 10.0
+  },
+  "human_win_rate": {
+   "fcfs": null,
+   "naive": null,
+   "fairdrop": null,
+   "fcfs_live": 0.08163265306122448
+  },
+  "bot_seat_share": {
+   "fcfs": null,
+   "naive": null,
+   "fairdrop": null,
+   "fcfs_live": 0.2
+  },
+  "integrity_ok": true,
+  "integrity_violations": {
+   "broken_merkle": 0,
+   "duplicate_entries": 0,
+   "duplicate_seats": 0,
+   "invalid_transitions": 0,
+   "missing_receipts": null,
+   "oversold": 0
+  },
+  "verified_by_reference_verifier": null,
+  "p99_ms": {
+   "/baseline/{id}/buy": 19.32
+  }
+ }
+}

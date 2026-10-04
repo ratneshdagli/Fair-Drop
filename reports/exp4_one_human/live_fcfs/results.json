@@ -1,0 +1,312 @@
+{
+ "meta": {
+  "experiment": "exp4_one_human",
+  "tag": "",
+  "scenario": {
+   "name": "exp4_one_human",
+   "description": "Experiment 4 - the 1-human scenario: ~50,000 bot requests from 5 operators with 4 identities each, plus ONE human, 10 seats.",
+   "policy": "fcfs",
+   "humans": 1,
+   "operators": [
+    {
+     "id": "flood-a",
+     "profile": "FLOOD_BOT",
+     "identities": 4,
+     "ip_pool": 5,
+     "params": {
+      "requests": 2500
+     },
+     "start": "open"
+    },
+    {
+     "id": "flood-b",
+     "profile": "FLOOD_BOT",
+     "identities": 4,
+     "ip_pool": 5,
+     "params": {
+      "requests": 2500
+     },
+     "start": "open"
+    },
+    {
+     "id": "proxy-a",
+     "profile": "PROXY_ROTATOR",
+     "identities": 4,
+     "ip_pool": 3000,
+     "params": {
+      "requests": 2500
+     },
+     "start": "open"
+    },
+    {
+     "id": "proxy-b",
+     "profile": "PROXY_ROTATOR",
+     "identities": 4,
+     "ip_pool": 3000,
+     "params": {
+      "requests": 2500
+     },
+     "start": "open"
+    },
+    {
+     "id": "retry-a",
+     "profile": "RETRY_BOT",
+     "identities": 4,
+     "ip_pool": 100,
+     "params": {
+      "retries": 625
+     },
+     "start": "open"
+    }
+   ],
+   "tiers": [
+    {
+     "id": "gold",
+     "name": "Gold",
+     "price_cents": 25000,
+     "seats": 10
+    }
+   ],
+   "window_sec": 30,
+   "arrival": "uniform",
+   "concurrency": 600,
+   "processes": 2,
+   "seed": 7,
+   "identity_cost_usd": 3.0,
+   "kill_replica_at_s": null,
+   "malicious": false,
+   "claims": false,
+   "claim_sec": 20,
+   "human_claim_rate": 0.9,
+   "tag": ""
+  },
+  "started": "2026-10-03T16:56:53",
+  "duration_s": 32.2,
+  "drop_id": "exp-exp4_one_human-fcfs-6b9d69",
+  "policy": "fcfs",
+  "population": 50000,
+  "identity_cost_usd": 3.0,
+  "actors": 21,
+  "operators": 5
+ },
+ "traffic": {
+  "humans": 1,
+  "bot_identities": 20,
+  "operators": {
+   "flood-a": {
+    "profile": "FLOOD_BOT",
+    "ip_pool": 5
+   },
+   "flood-b": {
+    "profile": "FLOOD_BOT",
+    "ip_pool": 5
+   },
+   "proxy-a": {
+    "profile": "PROXY_ROTATOR",
+    "ip_pool": 3000
+   },
+   "proxy-b": {
+    "profile": "PROXY_ROTATOR",
+    "ip_pool": 3000
+   },
+   "retry-a": {
+    "profile": "RETRY_BOT",
+    "ip_pool": 100
+   }
+  },
+  "client_requests": 53,
+  "client_events": {},
+  "receipts_issued_to_clients": 0
+ },
+ "latency": {
+  "POST /test/login": {
+   "requests": 21,
+   "p50_ms": 2.07,
+   "p95_ms": 3.45,
+   "p99_ms": 3.7,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 0,
+   "rps": 0.652831608438882,
+   "status": {
+    "200": 21
+   }
+  },
+  "POST /baseline/{id}/buy": {
+   "requests": 31,
+   "p50_ms": 1.18,
+   "p95_ms": 1.68,
+   "p99_ms": 2.08,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 21,
+   "rps": 0.9637038029335877,
+   "status": {
+    "200": 10,
+    "409": 21
+   }
+  },
+  "GET /drops/{id}": {
+   "requests": 1,
+   "p50_ms": 1.4,
+   "p95_ms": 1.4,
+   "p99_ms": 1.4,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 0,
+   "rps": 0.03108721944947057,
+   "status": {
+    "200": 1
+   }
+  }
+ },
+ "counters": {
+  "sold_out_rejects": 19
+ },
+ "extras": {},
+ "policies": {
+  "fcfs_live": {
+   "seats_total": 10,
+   "seats_by_kind": {
+    "bot": 10
+   },
+   "seats_by_operator": {
+    "proxy-a": 6,
+    "flood-b": 4
+   },
+   "identities_by_kind": {
+    "bot": 20,
+    "human": 1
+   },
+   "requests_by_kind": {
+    "bot": 30,
+    "human": 1
+   },
+   "bot_seat_share": 1.0,
+   "bot_identity_share": 0.9523809523809523,
+   "bot_advantage_ratio": 1.05,
+   "humans_entered": 1,
+   "humans_won": 0,
+   "human_win_rate": 0.0,
+   "operators": {
+    "flood-a": {
+     "identities": 4,
+     "seats": 0,
+     "seats_per_identity": 0.0,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": null,
+     "identities_per_seat": null
+    },
+    "flood-b": {
+     "identities": 4,
+     "seats": 4,
+     "seats_per_identity": 1.0,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": 3.0,
+     "identities_per_seat": 1.0
+    },
+    "humans": {
+     "identities": 1,
+     "seats": 0,
+     "seats_per_identity": 0.0,
+     "identity_spend_usd": 3.0,
+     "cost_per_seat_usd": null,
+     "identities_per_seat": null
+    },
+    "proxy-a": {
+     "identities": 4,
+     "seats": 6,
+     "seats_per_identity": 1.5,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": 2.0,
+     "identities_per_seat": 0.6666666666666666
+    },
+    "proxy-b": {
+     "identities": 4,
+     "seats": 0,
+     "seats_per_identity": 0.0,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": null,
+     "identities_per_seat": null
+    },
+    "retry-a": {
+     "identities": 4,
+     "seats": 0,
+     "seats_per_identity": 0.0,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": null,
+     "identities_per_seat": null
+    }
+   },
+   "max_seats_one_actor": 4
+  }
+ },
+ "integrity": {
+  "audit_chain": {
+   "ok": true,
+   "length": 528407,
+   "head_hash": "9420a32984a34cd0f5d4f4755469a49a52f5e487dac93c8200263cf8941cfa2b"
+  },
+  "drop_id": "exp-exp4_one_human-fcfs-6b9d69",
+  "info": {
+   "allocations_pg": 0,
+   "blocked_duplicate_seat_attempts": 0,
+   "entries_registered": 0,
+   "illegal_transitions_rejected": 0,
+   "ledger_lag": 0,
+   "rejected_reused_tokens": 0,
+   "seats_owned_redis": 0,
+   "tokens_issued": 0
+  },
+  "ok": true,
+  "total_violations": 0,
+  "violations": {
+   "broken_merkle": 0,
+   "duplicate_entries": 0,
+   "duplicate_seats": 0,
+   "invalid_transitions": 0,
+   "missing_receipts": null,
+   "oversold": 0
+  }
+ },
+ "headline": {
+  "policy": "fcfs",
+  "tag": "",
+  "actors": 21,
+  "humans": 1,
+  "bot_identities": 20,
+  "duration_s": 32.2,
+  "client_requests": 53,
+  "bot_advantage_ratio": {
+   "fcfs": null,
+   "naive": null,
+   "fairdrop": null,
+   "fcfs_live": 1.05
+  },
+  "human_win_rate": {
+   "fcfs": null,
+   "naive": null,
+   "fairdrop": null,
+   "fcfs_live": 0.0
+  },
+  "bot_seat_share": {
+   "fcfs": null,
+   "naive": null,
+   "fairdrop": null,
+   "fcfs_live": 1.0
+  },
+  "integrity_ok": true,
+  "integrity_violations": {
+   "broken_merkle": 0,
+   "duplicate_entries": 0,
+   "duplicate_seats": 0,
+   "invalid_transitions": 0,
+   "missing_receipts": null,
+   "oversold": 0
+  },
+  "verified_by_reference_verifier": null,
+  "p99_ms": {
+   "/baseline/{id}/buy": 2.08
+  }
+ }
+}

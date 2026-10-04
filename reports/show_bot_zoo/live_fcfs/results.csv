@@ -1,0 +1,9 @@
+policy,operator,identities,seats,seats_per_identity,identity_spend_usd,cost_per_seat_usd,identities_per_seat
+fcfs_live,farm,40,29,0.725,120.0,4.137931034482759,1.3793103448275863
+fcfs_live,flood,16,12,0.75,48.0,4.0,1.3333333333333333
+fcfs_live,hopper,56,26,0.4642857142857143,168.0,6.461538461538462,2.1538461538461537
+fcfs_live,humans,4800,400,0.08333333333333333,14400.0,36.0,12.0
+fcfs_live,mimic,20,0,0.0,60.0,,
+fcfs_live,retry,20,7,0.35,60.0,8.571428571428571,2.857142857142857
+fcfs_live,scraper,24,10,0.4166666666666667,72.0,7.2,2.4
+fcfs_live,speed,24,16,0.6666666666666666,72.0,4.5,1.5

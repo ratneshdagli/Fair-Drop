@@ -1,0 +1,183 @@
+{
+ "ran_at": 1791054210464,
+ "probes": [
+  {
+   "id": "phone_spellings",
+   "title": "One phone number, many identities",
+   "goal": "Turn one SIM into many 'verified people', each with its own entry.",
+   "move": "Verify the same number written 5 ways: '+15553451654', '+1 555 345 1654', '15553451654', \u2026",
+   "expected": "all five count as the same one person",
+   "result": "1 identity created from one phone number",
+   "verdict": "held",
+   "why": "The phone number is reduced to digits before it becomes an identity, and codes per phone are capped."
+  },
+  {
+   "id": "otp_guessing",
+   "title": "Guess someone's login code",
+   "goal": "Take over a victim's account by trying codes until one fits (only 1,000,000 exist).",
+   "move": "12 wrong guesses from 12 different addresses, then the right code",
+   "expected": "the code is destroyed after a few wrong guesses",
+   "result": "after 12 wrong guesses the correct code was refused (code was destroyed)",
+   "verdict": "held",
+   "why": "5 wrong guesses kill the code; the owner must request a new one."
+  },
+  {
+   "id": "otp_spam",
+   "title": "Spam login codes at one number",
+   "goal": "Make the site send 1,000s of SMS to one number (costs money, harasses the owner).",
+   "move": "Ask for a code for the same number 8 times in a row",
+   "expected": "only a few are sent, the rest are refused (429)",
+   "result": "3 of 8 codes were sent",
+   "verdict": "held",
+   "why": "Max 3 codes per number per 10 minutes."
+  },
+  {
+   "id": "admin_guessing",
+   "title": "Guess the admin password",
+   "goal": "Get into the admin screens by trying passwords.",
+   "move": "9 wrong passwords in a row from one address",
+   "expected": "the address is locked out after a few tries",
+   "result": "4 of 9 attempts were locked out (the rest were told 'wrong password')",
+   "verdict": "held",
+   "why": "5 wrong passwords per address locks it for 5 minutes. Use a strong ADMIN_PASSWORD (the server refuses demo secrets outside demo mode)."
+  },
+  {
+   "id": "huge_body",
+   "title": "Send enormous requests",
+   "goal": "Exhaust the server's memory with huge requests.",
+   "move": "A 300 KB 'ticket' (a real one is ~0.5 KB)",
+   "expected": "refused at the door without being read",
+   "result": "HTTP 413 ",
+   "verdict": "held",
+   "why": "Bodies over 64 KB are refused by the gateway and again by the server."
+  },
+  {
+   "id": "retry_key_hijack",
+   "title": "Hijack someone's retry key",
+   "goal": "Break an honest person's safe-retry so they lose their receipt (or get someone else's).",
+   "move": "Use the same Idempotency-Key as the victim, with the attacker's own valid ticket",
+   "expected": "the victim's retry still returns the victim's own receipt",
+   "result": "victim retry: HTTP 200, own receipt returned=True; attacker's call: HTTP 200",
+   "verdict": "held",
+   "why": "A retry key only counts together with its own ticket, so keys can't collide across people."
+  },
+  {
+   "id": "cross_sale_replay",
+   "title": "Use a ticket from a different sale",
+   "goal": "Re-use a valid ticket in another sale to enter twice.",
+   "move": "Take a signed ticket from sale A to sale B",
+   "expected": "rejected (each sale has its own key)",
+   "result": "HTTP 400",
+   "verdict": "held",
+   "why": "Each sale signs with its own key."
+  },
+  {
+   "id": "forged_login",
+   "title": "Fake a login",
+   "goal": "Skip verification by presenting a login card you wrote yourself (no signature).",
+   "move": "A login token with 'alg: none'",
+   "expected": "rejected (401)",
+   "result": "HTTP 401",
+   "verdict": "held",
+   "why": "Only the server's signature is accepted."
+  },
+  {
+   "id": "demo_secret",
+   "title": "Forge an admin login with the demo secret",
+   "goal": "Become admin by signing a token with the secret printed in the demo config.",
+   "move": "Sign an admin token with 'dev-only-change-me-jwt-secret'",
+   "expected": "rejected in a real deployment",
+   "result": "HTTP 200 (this demo is running with the demo secret, so it works HERE; a real deployment cannot start with it)",
+   "verdict": "demo-only",
+   "why": "Outside demo mode the server refuses to start with the demo admin password, JWT secret or test key."
+  },
+  {
+   "id": "seed_peek",
+   "title": "Peek at the secret draw seed early",
+   "goal": "Learn the draw's randomness before entering, then craft a ticket that is sure to win.",
+   "move": "Read the public sale page while it is open",
+   "expected": "the seed is not published until after the list is sealed",
+   "result": "only the seed's fingerprint is public",
+   "verdict": "held",
+   "why": "The seed is committed (hash) up front and revealed only after the list is sealed."
+  },
+  {
+   "id": "tier_sniping",
+   "title": "Watch tier crowding, then pounce",
+   "goal": "Wait until the last second, see which tier has the best odds, and enter that one.",
+   "move": "Read the public numbers while the sale is open",
+   "expected": "no live entry counts are public during the sale",
+   "result": "no public per-tier entry counts during the sale",
+   "verdict": "held",
+   "why": "Entry counts appear only after the list is sealed."
+  },
+  {
+   "id": "second_tier_token",
+   "title": "Ask for a second ticket in another tier",
+   "goal": "Double the chances by getting one ticket per tier.",
+   "move": "Same person asks for a gold ticket, then a general one",
+   "expected": "second request refused (one ticket per person per sale)",
+   "result": "first HTTP 200, second HTTP 409",
+   "verdict": "held",
+   "why": "One ticket per verified person per sale, whatever the tier."
+  },
+  {
+   "id": "address_lie",
+   "title": "Lie about your internet address",
+   "goal": "Send unlimited requests by inventing a new address in the headers each time.",
+   "move": "80 fast requests, each claiming a different address header",
+   "expected": "the gateway ignores the claims and slows the real address",
+   "result": "50 of 80 were slowed down (429)",
+   "verdict": "held",
+   "why": "The gateway overwrites the address header with the real one."
+  },
+  {
+   "id": "tier_switch",
+   "title": "Switch tier at the last moment",
+   "goal": "Pick the tier after seeing the crowd.",
+   "move": "Ticket requested for Gold, entered as General",
+   "expected": "allowed on purpose (the ticket doesn't carry a tier, so nobody can tell), harmless because crowding is hidden",
+   "result": "HTTP 200",
+   "verdict": "info",
+   "why": "A blind signature cannot carry the tier; see ARCHITECTURE_DECISIONS."
+  },
+  {
+   "id": "shared_address",
+   "title": "Flood from the same address as real people",
+   "goal": "Lock out the real people sharing your office / campus / mobile-network address by using up the address's quota.",
+   "move": "24 parallel flooders on one address while a real person on that same address tries to enter",
+   "expected": "the real person still gets in on the first try or two",
+   "result": "the real person got in after 3 tries (answers: 429, 429, 200)",
+   "verdict": "BROKEN",
+   "why": "Only bad requests count against an address; a valid ticket is never blocked by its neighbours' noise.",
+   "round": 2
+  },
+  {
+   "id": "download_flood",
+   "title": "Hammer the big public download",
+   "goal": "Slow the whole site for everyone by repeatedly fetching the huge public list (needed to re-check a draw).",
+   "move": "60 downloads of the 7.2 MB list (49,760 entries), 30 at a time, while a normal page is timed",
+   "expected": "the normal page stays fast",
+   "result": "a normal page took 2 ms before and 9 ms during; one download takes 113 ms; 0 of 60 downloads were slowed (429)",
+   "verdict": "held",
+   "why": "The finished list never changes, so the gateway keeps one copy and serves it to everybody (and repeated downloads from one address are slowed).",
+   "round": 2
+  },
+  {
+   "id": "idle_connections",
+   "title": "Hold thousands of connections open",
+   "goal": "Use up the gateway's connections so real people can't connect (Slowloris).",
+   "move": "1,500 connections that start a request and then go silent",
+   "expected": "real visitors still get an answer quickly",
+   "result": "a normal request took 2 ms (HTTP 200) while 1,500 connections hung",
+   "verdict": "held",
+   "why": "The gateway drops connections that stay silent for 10 seconds.",
+   "round": 2
+  }
+ ],
+ "held": 14,
+ "broken": 1,
+ "total": 17,
+ "all_held": false,
+ "rounds": 2
+}

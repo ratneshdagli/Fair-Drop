@@ -1,0 +1,372 @@
+{
+ "meta": {
+  "experiment": "show_bot_zoo",
+  "tag": "",
+  "scenario": {
+   "name": "show_bot_zoo",
+   "description": "Live show: real people plus every kind of bot (about 4% of the crowd): speed bots, flooders, retry-spammers, address-hoppers, an identity farm, shortcut seekers and human mimics.",
+   "policy": "fcfs",
+   "humans": 4800,
+   "operators": [
+    {
+     "id": "speed",
+     "profile": "SPEED_BOT",
+     "identities": 24,
+     "ip_pool": 20,
+     "params": {
+      "requests": 20
+     },
+     "start": "open"
+    },
+    {
+     "id": "flood",
+     "profile": "FLOOD_BOT",
+     "identities": 16,
+     "ip_pool": 5,
+     "params": {
+      "requests": 300
+     },
+     "start": "open"
+    },
+    {
+     "id": "retry",
+     "profile": "RETRY_BOT",
+     "identities": 20,
+     "ip_pool": 20,
+     "params": {
+      "retries": 30
+     },
+     "start": "open"
+    },
+    {
+     "id": "hopper",
+     "profile": "PROXY_ROTATOR",
+     "identities": 56,
+     "ip_pool": 2000,
+     "params": {
+      "requests": 120
+     },
+     "start": "open"
+    },
+    {
+     "id": "farm",
+     "profile": "SYBIL_OPERATOR",
+     "identities": 40,
+     "ip_pool": 1000,
+     "params": {
+      "requests": 3
+     },
+     "start": "open"
+    },
+    {
+     "id": "scraper",
+     "profile": "API_SCRAPER",
+     "identities": 24,
+     "ip_pool": 5,
+     "params": {
+      "fallback": 0
+     },
+     "start": "open"
+    },
+    {
+     "id": "mimic",
+     "profile": "UI_MIMIC",
+     "identities": 20,
+     "ip_pool": 50,
+     "params": {},
+     "start": "uniform"
+    }
+   ],
+   "tiers": [
+    {
+     "id": "gold",
+     "name": "Gold",
+     "price_cents": 25000,
+     "seats": 100
+    },
+    {
+     "id": "silver",
+     "name": "Silver",
+     "price_cents": 15000,
+     "seats": 150
+    },
+    {
+     "id": "general",
+     "name": "General",
+     "price_cents": 8000,
+     "seats": 250
+    }
+   ],
+   "window_sec": 15.0,
+   "arrival": "rush",
+   "concurrency": 2000,
+   "processes": 4,
+   "seed": 7,
+   "identity_cost_usd": 3.0,
+   "kill_replica_at_s": null,
+   "malicious": false,
+   "claims": false,
+   "claim_sec": 20,
+   "human_claim_rate": 0.9,
+   "tag": ""
+  },
+  "started": "2026-10-03T20:05:01",
+  "duration_s": 17.4,
+  "drop_id": "exp-show_bot_zoo-fcfs-4866bd",
+  "policy": "fcfs",
+  "population": 50000,
+  "identity_cost_usd": 3.0,
+  "actors": 5000,
+  "operators": 7
+ },
+ "traffic": {
+  "humans": 4800,
+  "bot_identities": 200,
+  "operators": {
+   "speed": {
+    "profile": "SPEED_BOT",
+    "ip_pool": 20
+   },
+   "flood": {
+    "profile": "FLOOD_BOT",
+    "ip_pool": 5
+   },
+   "retry": {
+    "profile": "RETRY_BOT",
+    "ip_pool": 20
+   },
+   "hopper": {
+    "profile": "PROXY_ROTATOR",
+    "ip_pool": 2000
+   },
+   "farm": {
+    "profile": "SYBIL_OPERATOR",
+    "ip_pool": 1000
+   },
+   "scraper": {
+    "profile": "API_SCRAPER",
+    "ip_pool": 5
+   },
+   "mimic": {
+    "profile": "UI_MIMIC",
+    "ip_pool": 50
+   }
+  },
+  "client_requests": 14912,
+  "client_events": {},
+  "receipts_issued_to_clients": 0
+ },
+ "latency": {
+  "POST /test/login": {
+   "requests": 5000,
+   "p50_ms": 109.38,
+   "p95_ms": 1542.3,
+   "p99_ms": 1650.74,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 0,
+   "rps": 286.79463326199453,
+   "status": {
+    "200": 5000
+   }
+  },
+  "POST /baseline/{id}/buy": {
+   "requests": 5092,
+   "p50_ms": 3.98,
+   "p95_ms": 294.11,
+   "p99_ms": 578.43,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 4592,
+   "rps": 292.0716545140152,
+   "status": {
+    "200": 500,
+    "409": 4592
+   }
+  },
+  "GET /drops/{id}": {
+   "requests": 4820,
+   "p50_ms": 65.24,
+   "p95_ms": 270.3,
+   "p99_ms": 404.29,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 0,
+   "rps": 276.4700264645627,
+   "status": {
+    "200": 4820
+   }
+  }
+ },
+ "counters": {
+  "sold_out_rejects": 4584
+ },
+ "extras": {},
+ "policies": {
+  "fcfs_live": {
+   "seats_total": 500,
+   "seats_by_kind": {
+    "bot": 100,
+    "human": 400
+   },
+   "seats_by_operator": {
+    "farm": 29,
+    "hopper": 26,
+    "retry": 7,
+    "scraper": 10,
+    "speed": 16,
+    "flood": 12,
+    "humans": 400
+   },
+   "identities_by_kind": {
+    "human": 4800,
+    "bot": 200
+   },
+   "requests_by_kind": {
+    "human": 4800,
+    "bot": 292
+   },
+   "bot_seat_share": 0.2,
+   "bot_identity_share": 0.04,
+   "bot_advantage_ratio": 5.0,
+   "humans_entered": 4800,
+   "humans_won": 400,
+   "human_win_rate": 0.08333333333333333,
+   "operators": {
+    "farm": {
+     "identities": 40,
+     "seats": 29,
+     "seats_per_identity": 0.725,
+     "identity_spend_usd": 120.0,
+     "cost_per_seat_usd": 4.137931034482759,
+     "identities_per_seat": 1.3793103448275863
+    },
+    "flood": {
+     "identities": 16,
+     "seats": 12,
+     "seats_per_identity": 0.75,
+     "identity_spend_usd": 48.0,
+     "cost_per_seat_usd": 4.0,
+     "identities_per_seat": 1.3333333333333333
+    },
+    "hopper": {
+     "identities": 56,
+     "seats": 26,
+     "seats_per_identity": 0.4642857142857143,
+     "identity_spend_usd": 168.0,
+     "cost_per_seat_usd": 6.461538461538462,
+     "identities_per_seat": 2.1538461538461537
+    },
+    "humans": {
+     "identities": 4800,
+     "seats": 400,
+     "seats_per_identity": 0.08333333333333333,
+     "identity_spend_usd": 14400.0,
+     "cost_per_seat_usd": 36.0,
+     "identities_per_seat": 12.0
+    },
+    "mimic": {
+     "identities": 20,
+     "seats": 0,
+     "seats_per_identity": 0.0,
+     "identity_spend_usd": 60.0,
+     "cost_per_seat_usd": null,
+     "identities_per_seat": null
+    },
+    "retry": {
+     "identities": 20,
+     "seats": 7,
+     "seats_per_identity": 0.35,
+     "identity_spend_usd": 60.0,
+     "cost_per_seat_usd": 8.571428571428571,
+     "identities_per_seat": 2.857142857142857
+    },
+    "scraper": {
+     "identities": 24,
+     "seats": 10,
+     "seats_per_identity": 0.4166666666666667,
+     "identity_spend_usd": 72.0,
+     "cost_per_seat_usd": 7.2,
+     "identities_per_seat": 2.4
+    },
+    "speed": {
+     "identities": 24,
+     "seats": 16,
+     "seats_per_identity": 0.6666666666666666,
+     "identity_spend_usd": 72.0,
+     "cost_per_seat_usd": 4.5,
+     "identities_per_seat": 1.5
+    }
+   },
+   "max_seats_one_actor": 4
+  }
+ },
+ "integrity": {
+  "audit_chain": {
+   "ok": true,
+   "length": 956969,
+   "head_hash": "579b2d07d7d4fcb0011d250a802c24a94bb1d428f7c6778bfce52bf28378b03e"
+  },
+  "drop_id": "exp-show_bot_zoo-fcfs-4866bd",
+  "info": {
+   "allocations_pg": 0,
+   "blocked_duplicate_seat_attempts": 0,
+   "entries_registered": 0,
+   "illegal_transitions_rejected": 0,
+   "ledger_lag": 0,
+   "rejected_reused_tokens": 0,
+   "seats_owned_redis": 0,
+   "tokens_issued": 0
+  },
+  "ok": true,
+  "total_violations": 0,
+  "violations": {
+   "broken_merkle": 0,
+   "duplicate_entries": 0,
+   "duplicate_seats": 0,
+   "invalid_transitions": 0,
+   "missing_receipts": null,
+   "oversold": 0
+  }
+ },
+ "headline": {
+  "policy": "fcfs",
+  "tag": "",
+  "actors": 5000,
+  "humans": 4800,
+  "bot_identities": 200,
+  "duration_s": 17.4,
+  "client_requests": 14912,
+  "bot_advantage_ratio": {
+   "fcfs": null,
+   "naive": null,
+   "fairdrop": null,
+   "fcfs_live": 5.0
+  },
+  "human_win_rate": {
+   "fcfs": null,
+   "naive": null,
+   "fairdrop": null,
+   "fcfs_live": 0.08333333333333333
+  },
+  "bot_seat_share": {
+   "fcfs": null,
+   "naive": null,
+   "fairdrop": null,
+   "fcfs_live": 0.2
+  },
+  "integrity_ok": true,
+  "integrity_violations": {
+   "broken_merkle": 0,
+   "duplicate_entries": 0,
+   "duplicate_seats": 0,
+   "invalid_transitions": 0,
+   "missing_receipts": null,
+   "oversold": 0
+  },
+  "verified_by_reference_verifier": null,
+  "p99_ms": {
+   "/baseline/{id}/buy": 578.43
+  }
+ }
+}

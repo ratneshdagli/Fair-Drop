@@ -1,0 +1,4 @@
+policy,operator,identities,seats,seats_per_identity,identity_spend_usd,cost_per_seat_usd,identities_per_seat
+fcfs_live,humans,4000,400,0.1,12000.0,30.0,10.0
+fcfs_live,scrapers,281,100,0.35587188612099646,843.0,8.43,2.81
+fcfs_live,ui-mimic,300,0,0.0,900.0,,

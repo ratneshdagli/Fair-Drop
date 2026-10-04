@@ -1,0 +1,3 @@
+policy,operator,identities,seats,seats_per_identity,identity_spend_usd,cost_per_seat_usd,identities_per_seat
+fcfs_live,humans,40000,400,0.01,120000.0,300.0,100.0
+fcfs_live,sybil,10000,100,0.01,30000.0,300.0,100.0

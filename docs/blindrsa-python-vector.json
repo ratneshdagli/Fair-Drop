@@ -1,0 +1,10 @@
+{
+ "note": "made by attack_engine/blindrsa.py: client-side RFC 9474 RSABSSA-SHA384-PSS-Deterministic with a throw-away key; public data only. backend/internal/fdcrypto/python_vector_test.go verifies it with the real server verifier.",
+ "public_key_jwk": {
+  "kty": "RSA",
+  "n": "mZ8zuzlURy2k3hFo1QEguNsIAKeQGk5FjGnX26Xn3GNqegUS6FGQt4A2cJUEnYkEcoQwcrR6y3aa2p04pW98KIdf5Dp_lgujoWatBKPOqAjzxj06DAjanWXTm5x0l9VnFiahBoO2RmZh1uvqLAGfZSeAAM0gEUJz-0e3sDH7b5OVz4xRKbLkgq16noOsM2y9zJem_7KRs2nJQUu82wyekQcG0ofrrgQzZ6tR3MSgZnX40syQTu5D0EB32pC0XJ6TGqJ-1iZAqNUDIXGc8Y9elJP_R4NF0hv8kOzHjGSxTY0VxXShaUZxKOmzpuMwYeCKXqxcV6Jf15xI14ku--qoYQ",
+  "e": "AQAB"
+ },
+ "token_msg": "N7P+EsNfdkV2ZjySXhF05nsnLhcQvsIePmKQKmO8oTs=",
+ "sig": "EuhTLLN9zIwQtPbhjqD/G2uWiUyjZp5AsFQxm0DWA+s2nxKiWo/FhApMKiELchl5QKi0GOicm5L2cIzAFDL332Bf6n5Lmk8x8Fqnigcw4cG076I4QC9cKr04DKU7PNv6eM43bVOoVOHE3/RLZKtBthoZ3oNJF6p3w8v1EgQBcNppxNUZ1wXoN21/kxRT0lUyt6lX5si6ojInt20GH+D+LXxXmGKodIx3v2JYr+ieUvmyq/rsPsDjDYDEBNZ+PFtOHgEfaTWht5Q5Lxt7KMqTFLoo4Nv52BvaCA+sy3gYScqhZ/V8qCueHqq2Bk5ekeRNO05czxvGy+e88DBlyxODFg=="
+}

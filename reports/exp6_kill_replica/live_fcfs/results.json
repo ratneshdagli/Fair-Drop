@@ -1,0 +1,209 @@
+{
+ "meta": {
+  "experiment": "exp6_kill_replica",
+  "tag": "",
+  "scenario": {
+   "name": "exp6_kill_replica",
+   "description": "Experiment 6 - kill replica api-2 mid-window: every signed receipt must still be in the Merkle tree.",
+   "policy": "fcfs",
+   "humans": 20000,
+   "operators": [],
+   "tiers": [
+    {
+     "id": "gold",
+     "name": "Gold",
+     "price_cents": 25000,
+     "seats": 100
+    },
+    {
+     "id": "silver",
+     "name": "Silver",
+     "price_cents": 15000,
+     "seats": 150
+    },
+    {
+     "id": "general",
+     "name": "General",
+     "price_cents": 8000,
+     "seats": 250
+    }
+   ],
+   "window_sec": 60,
+   "arrival": "rush",
+   "concurrency": 2000,
+   "processes": 4,
+   "seed": 7,
+   "identity_cost_usd": 3.0,
+   "kill_replica_at_s": 25,
+   "malicious": false,
+   "claims": true,
+   "claim_sec": 8,
+   "human_claim_rate": 0.9,
+   "tag": ""
+  },
+  "started": "2026-10-03T17:01:11",
+  "duration_s": 62.6,
+  "drop_id": "exp-exp6_kill_replica-fcfs-4866bd",
+  "policy": "fcfs",
+  "population": 50000,
+  "identity_cost_usd": 3.0,
+  "actors": 20000,
+  "operators": 0
+ },
+ "traffic": {
+  "humans": 20000,
+  "bot_identities": 0,
+  "operators": {},
+  "client_requests": 60000,
+  "client_events": {},
+  "receipts_issued_to_clients": 0
+ },
+ "latency": {
+  "POST /test/login": {
+   "requests": 20000,
+   "p50_ms": 0.97,
+   "p95_ms": 5.61,
+   "p99_ms": 26.55,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 0,
+   "rps": 319.4561614203902,
+   "status": {
+    "200": 20000
+   }
+  },
+  "GET /drops/{id}": {
+   "requests": 20000,
+   "p50_ms": 0.79,
+   "p95_ms": 2.92,
+   "p99_ms": 10.88,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 0,
+   "rps": 319.4561614203902,
+   "status": {
+    "200": 20000
+   }
+  },
+  "POST /baseline/{id}/buy": {
+   "requests": 20000,
+   "p50_ms": 1.39,
+   "p95_ms": 2.63,
+   "p99_ms": 6.15,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 19500,
+   "rps": 319.4561614203902,
+   "status": {
+    "200": 500,
+    "409": 19500
+   }
+  }
+ },
+ "counters": {
+  "sold_out_rejects": 19500
+ },
+ "extras": {},
+ "policies": {
+  "fcfs_live": {
+   "seats_total": 500,
+   "seats_by_kind": {
+    "human": 500
+   },
+   "seats_by_operator": {
+    "humans": 500
+   },
+   "identities_by_kind": {
+    "human": 20000
+   },
+   "requests_by_kind": {
+    "human": 20000
+   },
+   "bot_seat_share": 0.0,
+   "bot_identity_share": 0.0,
+   "bot_advantage_ratio": null,
+   "humans_entered": 20000,
+   "humans_won": 500,
+   "human_win_rate": 0.025,
+   "operators": {
+    "humans": {
+     "identities": 20000,
+     "seats": 500,
+     "seats_per_identity": 0.025,
+     "identity_spend_usd": 60000.0,
+     "cost_per_seat_usd": 120.0,
+     "identities_per_seat": 40.0
+    }
+   },
+   "max_seats_one_actor": 1
+  }
+ },
+ "integrity": {
+  "audit_chain": {
+   "ok": true,
+   "length": 579128,
+   "head_hash": "4f28dae47f3b82ed95703038cce80503e7403256a8985dd4335d8aba5bfc8f1b"
+  },
+  "drop_id": "exp-exp6_kill_replica-fcfs-4866bd",
+  "info": {
+   "allocations_pg": 0,
+   "blocked_duplicate_seat_attempts": 0,
+   "entries_registered": 0,
+   "illegal_transitions_rejected": 0,
+   "ledger_lag": 0,
+   "rejected_reused_tokens": 0,
+   "seats_owned_redis": 0,
+   "tokens_issued": 0
+  },
+  "ok": true,
+  "total_violations": 0,
+  "violations": {
+   "broken_merkle": 0,
+   "duplicate_entries": 0,
+   "duplicate_seats": 0,
+   "invalid_transitions": 0,
+   "missing_receipts": null,
+   "oversold": 0
+  }
+ },
+ "headline": {
+  "policy": "fcfs",
+  "tag": "",
+  "actors": 20000,
+  "humans": 20000,
+  "bot_identities": 0,
+  "duration_s": 62.6,
+  "client_requests": 60000,
+  "bot_advantage_ratio": {
+   "fcfs": null,
+   "naive": null,
+   "fairdrop": null,
+   "fcfs_live": null
+  },
+  "human_win_rate": {
+   "fcfs": null,
+   "naive": null,
+   "fairdrop": null,
+   "fcfs_live": 0.025
+  },
+  "bot_seat_share": {
+   "fcfs": null,
+   "naive": null,
+   "fairdrop": null,
+   "fcfs_live": 0.0
+  },
+  "integrity_ok": true,
+  "integrity_violations": {
+   "broken_merkle": 0,
+   "duplicate_entries": 0,
+   "duplicate_seats": 0,
+   "invalid_transitions": 0,
+   "missing_receipts": null,
+   "oversold": 0
+  },
+  "verified_by_reference_verifier": null,
+  "p99_ms": {
+   "/baseline/{id}/buy": 6.15
+  }
+ }
+}

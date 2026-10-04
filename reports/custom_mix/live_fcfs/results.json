@@ -1,0 +1,459 @@
+{
+ "meta": {
+  "experiment": "custom_mix",
+  "tag": "",
+  "scenario": {
+   "name": "custom_mix",
+   "description": "Your own test: 1,500 real people plus 8 speed bots, 5 flood bots, 6 retry bots, 18 proxy rotators, 14 sybil operators, 8 api scrapers, 5 ui mimics, 6 crypto swarms, 5 smart scrapers, 5 state snipers, 4 claim snipers.",
+   "policy": "fcfs",
+   "humans": 1500,
+   "operators": [
+    {
+     "id": "lab-speed-bot",
+     "profile": "SPEED_BOT",
+     "identities": 8,
+     "ip_pool": 20,
+     "params": {
+      "requests": 20
+     },
+     "start": "open"
+    },
+    {
+     "id": "lab-flood-bot",
+     "profile": "FLOOD_BOT",
+     "identities": 5,
+     "ip_pool": 5,
+     "params": {
+      "requests": 300
+     },
+     "start": "open"
+    },
+    {
+     "id": "lab-retry-bot",
+     "profile": "RETRY_BOT",
+     "identities": 6,
+     "ip_pool": 20,
+     "params": {
+      "retries": 30
+     },
+     "start": "open"
+    },
+    {
+     "id": "lab-proxy-rotator",
+     "profile": "PROXY_ROTATOR",
+     "identities": 18,
+     "ip_pool": 2000,
+     "params": {
+      "requests": 120
+     },
+     "start": "open"
+    },
+    {
+     "id": "lab-sybil-operator",
+     "profile": "SYBIL_OPERATOR",
+     "identities": 14,
+     "ip_pool": 1000,
+     "params": {
+      "requests": 3
+     },
+     "start": "open"
+    },
+    {
+     "id": "lab-api-scraper",
+     "profile": "API_SCRAPER",
+     "identities": 8,
+     "ip_pool": 5,
+     "params": {
+      "fallback": 0
+     },
+     "start": "open"
+    },
+    {
+     "id": "lab-ui-mimic",
+     "profile": "UI_MIMIC",
+     "identities": 5,
+     "ip_pool": 50,
+     "params": {},
+     "start": "uniform"
+    },
+    {
+     "id": "lab-crypto-swarm",
+     "profile": "CRYPTO_SWARM",
+     "identities": 6,
+     "ip_pool": 200,
+     "params": {},
+     "start": "open"
+    },
+    {
+     "id": "lab-smart-scraper",
+     "profile": "SMART_SCRAPER",
+     "identities": 5,
+     "ip_pool": 2000,
+     "params": {
+      "requests": 10
+     },
+     "start": "open"
+    },
+    {
+     "id": "lab-state-sniper",
+     "profile": "STATE_SNIPER",
+     "identities": 5,
+     "ip_pool": 20,
+     "params": {
+      "shots": 8
+     },
+     "start": "boundary"
+    },
+    {
+     "id": "lab-claim-sniper",
+     "profile": "CLAIM_SNIPER",
+     "identities": 4,
+     "ip_pool": 20,
+     "params": {},
+     "start": "open"
+    }
+   ],
+   "tiers": [
+    {
+     "id": "gold",
+     "name": "Gold",
+     "price_cents": 25000,
+     "seats": 100
+    },
+    {
+     "id": "silver",
+     "name": "Silver",
+     "price_cents": 15000,
+     "seats": 150
+    },
+    {
+     "id": "general",
+     "name": "General",
+     "price_cents": 8000,
+     "seats": 250
+    }
+   ],
+   "window_sec": 120.0,
+   "arrival": "rush",
+   "concurrency": 2000,
+   "processes": 4,
+   "seed": 7,
+   "identity_cost_usd": 3.0,
+   "kill_replica_at_s": null,
+   "malicious": false,
+   "claims": true,
+   "claim_sec": 10,
+   "human_claim_rate": 0.9,
+   "tag": ""
+  },
+  "started": "2026-10-04T12:57:02",
+  "duration_s": 121.7,
+  "drop_id": "exp-custom_mix-fcfs-4866bd",
+  "policy": "fcfs",
+  "population": 50000,
+  "identity_cost_usd": 3.0,
+  "actors": 1584,
+  "operators": 11
+ },
+ "traffic": {
+  "humans": 1500,
+  "bot_identities": 84,
+  "operators": {
+   "lab-speed-bot": {
+    "profile": "SPEED_BOT",
+    "ip_pool": 20
+   },
+   "lab-flood-bot": {
+    "profile": "FLOOD_BOT",
+    "ip_pool": 5
+   },
+   "lab-retry-bot": {
+    "profile": "RETRY_BOT",
+    "ip_pool": 20
+   },
+   "lab-proxy-rotator": {
+    "profile": "PROXY_ROTATOR",
+    "ip_pool": 2000
+   },
+   "lab-sybil-operator": {
+    "profile": "SYBIL_OPERATOR",
+    "ip_pool": 1000
+   },
+   "lab-api-scraper": {
+    "profile": "API_SCRAPER",
+    "ip_pool": 5
+   },
+   "lab-ui-mimic": {
+    "profile": "UI_MIMIC",
+    "ip_pool": 50
+   },
+   "lab-crypto-swarm": {
+    "profile": "CRYPTO_SWARM",
+    "ip_pool": 200
+   },
+   "lab-smart-scraper": {
+    "profile": "SMART_SCRAPER",
+    "ip_pool": 2000
+   },
+   "lab-state-sniper": {
+    "profile": "STATE_SNIPER",
+    "ip_pool": 20
+   },
+   "lab-claim-sniper": {
+    "profile": "CLAIM_SNIPER",
+    "ip_pool": 20
+   }
+  },
+  "client_requests": 4772,
+  "client_events": {},
+  "receipts_issued_to_clients": 0
+ },
+ "latency": {
+  "POST /test/login": {
+   "requests": 1584,
+   "p50_ms": 3.54,
+   "p95_ms": 12.04,
+   "p99_ms": 25.96,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 0,
+   "rps": 13.014447566566867,
+   "status": {
+    "200": 1584
+   }
+  },
+  "GET /drops/{id}": {
+   "requests": 1505,
+   "p50_ms": 1.6,
+   "p95_ms": 3.42,
+   "p99_ms": 9.75,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 0,
+   "rps": 12.365368426567636,
+   "status": {
+    "200": 1505
+   }
+  },
+  "POST /baseline/{id}/buy": {
+   "requests": 1683,
+   "p50_ms": 2.69,
+   "p95_ms": 8.25,
+   "p99_ms": 23.51,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 1183,
+   "rps": 13.827850539477296,
+   "status": {
+    "200": 500,
+    "409": 1183
+   }
+  }
+ },
+ "counters": {
+  "sold_out_rejects": 1160
+ },
+ "extras": {},
+ "policies": {
+  "fcfs_live": {
+   "seats_total": 500,
+   "seats_by_kind": {
+    "bot": 100,
+    "human": 400
+   },
+   "seats_by_operator": {
+    "lab-state-sniper": 5,
+    "lab-flood-bot": 12,
+    "lab-proxy-rotator": 30,
+    "lab-api-scraper": 12,
+    "lab-speed-bot": 12,
+    "lab-claim-sniper": 12,
+    "lab-smart-scraper": 4,
+    "lab-retry-bot": 8,
+    "lab-sybil-operator": 5,
+    "humans": 400
+   },
+   "identities_by_kind": {
+    "human": 1500,
+    "bot": 84
+   },
+   "requests_by_kind": {
+    "human": 1500,
+    "bot": 183
+   },
+   "bot_seat_share": 0.2,
+   "bot_identity_share": 0.05303030303030303,
+   "bot_advantage_ratio": 3.7714285714285714,
+   "humans_entered": 1500,
+   "humans_won": 400,
+   "human_win_rate": 0.26666666666666666,
+   "operators": {
+    "humans": {
+     "identities": 1500,
+     "seats": 400,
+     "seats_per_identity": 0.26666666666666666,
+     "identity_spend_usd": 4500.0,
+     "cost_per_seat_usd": 11.25,
+     "identities_per_seat": 3.75
+    },
+    "lab-api-scraper": {
+     "identities": 8,
+     "seats": 12,
+     "seats_per_identity": 1.5,
+     "identity_spend_usd": 24.0,
+     "cost_per_seat_usd": 2.0,
+     "identities_per_seat": 0.6666666666666666
+    },
+    "lab-claim-sniper": {
+     "identities": 4,
+     "seats": 12,
+     "seats_per_identity": 3.0,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": 1.0,
+     "identities_per_seat": 0.3333333333333333
+    },
+    "lab-crypto-swarm": {
+     "identities": 6,
+     "seats": 0,
+     "seats_per_identity": 0.0,
+     "identity_spend_usd": 18.0,
+     "cost_per_seat_usd": null,
+     "identities_per_seat": null
+    },
+    "lab-flood-bot": {
+     "identities": 5,
+     "seats": 12,
+     "seats_per_identity": 2.4,
+     "identity_spend_usd": 15.0,
+     "cost_per_seat_usd": 1.25,
+     "identities_per_seat": 0.4166666666666667
+    },
+    "lab-proxy-rotator": {
+     "identities": 18,
+     "seats": 30,
+     "seats_per_identity": 1.6666666666666667,
+     "identity_spend_usd": 54.0,
+     "cost_per_seat_usd": 1.8,
+     "identities_per_seat": 0.6
+    },
+    "lab-retry-bot": {
+     "identities": 6,
+     "seats": 8,
+     "seats_per_identity": 1.3333333333333333,
+     "identity_spend_usd": 18.0,
+     "cost_per_seat_usd": 2.25,
+     "identities_per_seat": 0.75
+    },
+    "lab-smart-scraper": {
+     "identities": 5,
+     "seats": 4,
+     "seats_per_identity": 0.8,
+     "identity_spend_usd": 15.0,
+     "cost_per_seat_usd": 3.75,
+     "identities_per_seat": 1.25
+    },
+    "lab-speed-bot": {
+     "identities": 8,
+     "seats": 12,
+     "seats_per_identity": 1.5,
+     "identity_spend_usd": 24.0,
+     "cost_per_seat_usd": 2.0,
+     "identities_per_seat": 0.6666666666666666
+    },
+    "lab-state-sniper": {
+     "identities": 5,
+     "seats": 5,
+     "seats_per_identity": 1.0,
+     "identity_spend_usd": 15.0,
+     "cost_per_seat_usd": 3.0,
+     "identities_per_seat": 1.0
+    },
+    "lab-sybil-operator": {
+     "identities": 14,
+     "seats": 5,
+     "seats_per_identity": 0.35714285714285715,
+     "identity_spend_usd": 42.0,
+     "cost_per_seat_usd": 8.4,
+     "identities_per_seat": 2.8
+    },
+    "lab-ui-mimic": {
+     "identities": 5,
+     "seats": 0,
+     "seats_per_identity": 0.0,
+     "identity_spend_usd": 15.0,
+     "cost_per_seat_usd": null,
+     "identities_per_seat": null
+    }
+   },
+   "max_seats_one_actor": 4
+  }
+ },
+ "integrity": {
+  "audit_chain": {
+   "ok": true,
+   "length": 1197934,
+   "head_hash": "83c589336c6fe64c5e55a4d11f0f6d0ec7d51f6dda3c21838f41939a2ecbd2d1"
+  },
+  "drop_id": "exp-custom_mix-fcfs-4866bd",
+  "info": {
+   "allocations_pg": 0,
+   "blocked_duplicate_seat_attempts": 0,
+   "entries_registered": 0,
+   "illegal_transitions_rejected": 0,
+   "ledger_lag": 0,
+   "rejected_reused_tokens": 0,
+   "seats_owned_redis": 0,
+   "tokens_issued": 0
+  },
+  "ok": true,
+  "total_violations": 0,
+  "violations": {
+   "broken_merkle": 0,
+   "duplicate_entries": 0,
+   "duplicate_seats": 0,
+   "invalid_transitions": 0,
+   "missing_receipts": null,
+   "oversold": 0
+  }
+ },
+ "headline": {
+  "policy": "fcfs",
+  "tag": "",
+  "actors": 1584,
+  "humans": 1500,
+  "bot_identities": 84,
+  "duration_s": 121.7,
+  "client_requests": 4772,
+  "bot_advantage_ratio": {
+   "fcfs": null,
+   "naive": null,
+   "fairdrop": null,
+   "fcfs_live": 3.7714285714285714
+  },
+  "human_win_rate": {
+   "fcfs": null,
+   "naive": null,
+   "fairdrop": null,
+   "fcfs_live": 0.26666666666666666
+  },
+  "bot_seat_share": {
+   "fcfs": null,
+   "naive": null,
+   "fairdrop": null,
+   "fcfs_live": 0.2
+  },
+  "integrity_ok": true,
+  "integrity_violations": {
+   "broken_merkle": 0,
+   "duplicate_entries": 0,
+   "duplicate_seats": 0,
+   "invalid_transitions": 0,
+   "missing_receipts": null,
+   "oversold": 0
+  },
+  "verified_by_reference_verifier": null,
+  "p99_ms": {
+   "/baseline/{id}/buy": 23.51
+  }
+ }
+}

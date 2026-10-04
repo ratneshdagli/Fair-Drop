@@ -1,0 +1,7 @@
+policy,operator,identities,seats,seats_per_identity,identity_spend_usd,cost_per_seat_usd,identities_per_seat
+fcfs_live,flood-a,4,0,0.0,12.0,,
+fcfs_live,flood-b,4,4,1.0,12.0,3.0,1.0
+fcfs_live,humans,1,0,0.0,3.0,,
+fcfs_live,proxy-a,4,6,1.5,12.0,2.0,0.6666666666666666
+fcfs_live,proxy-b,4,0,0.0,12.0,,
+fcfs_live,retry-a,4,0,0.0,12.0,,

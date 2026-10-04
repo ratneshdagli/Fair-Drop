@@ -1,0 +1,13 @@
+policy,operator,identities,seats,seats_per_identity,identity_spend_usd,cost_per_seat_usd,identities_per_seat
+fcfs_live,humans,1500,400,0.26666666666666666,4500.0,11.25,3.75
+fcfs_live,lab-api-scraper,8,12,1.5,24.0,2.0,0.6666666666666666
+fcfs_live,lab-claim-sniper,4,12,3.0,12.0,1.0,0.3333333333333333
+fcfs_live,lab-crypto-swarm,6,0,0.0,18.0,,
+fcfs_live,lab-flood-bot,5,12,2.4,15.0,1.25,0.4166666666666667
+fcfs_live,lab-proxy-rotator,18,30,1.6666666666666667,54.0,1.8,0.6
+fcfs_live,lab-retry-bot,6,8,1.3333333333333333,18.0,2.25,0.75
+fcfs_live,lab-smart-scraper,5,4,0.8,15.0,3.75,1.25
+fcfs_live,lab-speed-bot,8,12,1.5,24.0,2.0,0.6666666666666666
+fcfs_live,lab-state-sniper,5,5,1.0,15.0,3.0,1.0
+fcfs_live,lab-sybil-operator,14,5,0.35714285714285715,42.0,8.4,2.8
+fcfs_live,lab-ui-mimic,5,0,0.0,15.0,,

@@ -1,0 +1,5 @@
+endpoint,requests,rps,p50_ms,p95_ms,p99_ms,errors,error_rate,rejected_by_design
+POST /test/login,50000,768.4,3.05,29.84,307.21,0,0.0,0
+GET /drops/{id},50000,768.4,2.89,18.37,32.1,0,0.0,0
+POST /drops/{id}/test-token,50000,768.4,9.32,28.77,56.6,0,0.0,0
+POST /drops/{id}/register,50000,768.4,4.09,19.31,43.96,0,0.0,0

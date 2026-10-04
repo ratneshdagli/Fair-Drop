@@ -1,0 +1,45 @@
+# exp3_sybil_scaling identities=100
+
+Experiment 3 - Sybil scaling: one operator buys 100 verified identities.
+
+*policy under test:* **fcfs** &nbsp; *duration:* 17.2s &nbsp; *drop:* `exp-exp3_sybil_scaling-fcfs-e86715`
+
+## Traffic
+- verified identities participating: **5000** (4900 humans, 100 bot identities across 1 operators)
+- client requests sent: **14,967**; recorded entry attempts (server): **n/a**
+- assumed identity cost: **$3.0** (explicit, configurable; this shows the *cost* of buying more identities, it does not claim bots are impossible)
+
+  - operator `sybil`: SYBIL_OPERATOR, IP pool 5000
+
+## Same traffic, three allocation policies
+
+| policy | seats | bot share of seats | bot share of identities | **bot advantage ratio** | humans won / entered | human win rate |
+|---|---|---|---|---|---|---|
+| FCFS (live run, real requests against the classic sale) | 500 | 0.200 | 0.020 | **10.000** | 400.0 / 4900 | 0.082 |
+
+*Naive lottery and Fair Drop (expected) are averaged over 200 independent re-draws of the identical entries; FCFS is deterministic given arrival order.*
+
+
+## Latency (client observed)
+
+| endpoint | requests | rps | p50 | p95 | p99 | 5xx/conn errors | error rate | rejected by design (4xx) |
+|---|---|---|---|---|---|---|---|---|
+| POST /baseline/{id}/buy | 5067 | 295 | 1 ms | 3 ms | 19 ms | 0 | 0.0000% | 4567 |
+| POST /test/login | 5000 | 291 | 1 ms | 16 ms | 27 ms | 0 | 0.0000% | 0 |
+| GET /drops/{id} | 4900 | 285 | 1 ms | 5 ms | 12 ms | 0 | 0.0000% | 0 |
+
+## Integrity (must be 0)
+
+```
+{
+ "broken_merkle": 0,
+ "duplicate_entries": 0,
+ "duplicate_seats": 0,
+ "invalid_transitions": 0,
+ "missing_receipts": null,
+ "oversold": 0
+}
+```
+audit chain valid: **True** (594148 events)  -> overall: **OK**
+
+Charts: `charts/*.png`; machine-readable: `results.json`, `results.csv`, `latency.csv`.

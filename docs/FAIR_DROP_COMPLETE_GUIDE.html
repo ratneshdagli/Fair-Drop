@@ -1,0 +1,1408 @@
+<!doctype html><meta charset=utf-8><title>Fair Drop: Complete Guide</title><style>body{font:16px/1.55 system-ui,sans-serif;max-width:900px;margin:2rem auto;padding:0 1rem}table{border-collapse:collapse;margin:1rem 0}td,th{border:1px solid #ccc;padding:.35rem .6rem;vertical-align:top}th{background:#f2f2f2}code,pre{background:#f5f5f5;border-radius:4px}pre{padding:.7rem;overflow:auto}code{padding:0 .2rem}h1{border-bottom:2px solid #333;margin-top:3rem}h2{margin-top:2rem}@media print{h1{page-break-before:always}}</style><h1>Fair Drop: The Complete Guide</h1>
+<p>One document with everything: what it is, how the website works, the architecture, how the bots are simulated, how we attacked and defended it, the tests, the results and the API. Read Part 1 for the story; the later parts are the detailed reference.</p>
+<h2>Contents</h2>
+<ol>
+<li>Overview: the problem, the idea, how it works for a person</li>
+<li>The website: every page and the Control Room</li>
+<li>How the bots are simulated (Bot Lab, the 7 bot types, the judge)</li>
+<li>Reference documents, in order: Architecture · Cryptography · Attack engine · Red team · Fairness metrics · Tests explained · Testing commands · Demo runbook · System analysis · Research · Architecture decisions · API contract · Dependencies · README and results</li>
+<li>Honest limits</li>
+</ol>
+<hr />
+<h1>Part 1: Overview</h1>
+<h2>Latest version: the Live Arena (read this first)</h2>
+<p>Parts of this guide below describe the earlier Control Room. The current, simpler way to see and show everything is the <strong>Live Arena</strong> (<code>/live</code>, or the first tab of Admin):
+- <strong>Control panel</strong>: choose how many real people and how many bot accounts of each of the <strong>11 bot kinds</strong> (the original 7 plus a real-ticket bot that builds genuine blind-RSA tickets itself, a careful scraper that avoids the decoy, a boundary sniper that fires around the open and close instants, and a seat sniper that hammers the claim step), choose how fast the crowd arrives, and Start / Stop / Restart.
+- <strong>Three methods, same crowd, same 500 seats</strong>: first come first served (a real live sale), a simple lottery where every request is a ticket (calculated exactly from the final list of requests), and Fair Drop (live, then the real draw). Orange squares are seats that went to bots.
+- <strong>The bots, live</strong>: hover any bot to see what it is doing right now (or, if quiet, its last recorded actions); click an account to follow it.
+- <strong>The real web traffic</strong>: the servers' own record of every HTTP request (method, path, status, milliseconds, which of the 3 servers, account, address, bot kind). Proof the bots really send traffic.
+- <strong>Do the numbers add up?</strong>: the screen checks its own figures against each other, live.
+- <strong>How the research scores this</strong>: false-positive rate against the strict 0.1% target, precision / recall / F1, and whether each bot kind arrives differently from real people; PR-AUC, mouse tracking and fingerprinting are marked not applicable, with the reason.
+- <strong>Fixes worth knowing</strong>: a re-created test sale now starts a new audit epoch (before, earlier tests' entries were counted as "missing receipts"); a sale-id reuse no longer shows the previous test's results; the live simple-lottery estimate was removed because it ignored the three price tiers (it is shown only as an exact result after the draw).
+- <strong>Set-up for someone new</strong>: see <code>SETUP.md</code> in the project root.
+Honest limits: the identity farm (many genuinely verified accounts) is not blocked; most simulated people and bots get tickets through a test shortcut (only the real-ticket bot blinds locally); the Go unit tests were not run on the build machine (Docker compiled the code and live runs passed); not measured at 50,000 people on the new screen.</p>
+<h2>The problem</h2>
+<p>500 seats, 50,000 people. In a normal "first-come-first-served" (FCFS) sale, whoever's request reaches the server first wins. That rewards speed, not need: scripts, many addresses and bought accounts beat real people. In our test, bots that were 4% of the crowd took about 20% of the seats under FCFS.</p>
+<h2>The idea</h2>
+<p>Fair Drop turns the sale into a lottery that speed cannot win:
+- <strong>One verified identity = one entry.</strong> You verify a phone once, before a cutoff.
+- <strong>Entries are anonymous.</strong> A blind signature lets the server sign your ticket without seeing which one is yours.
+- <strong>The list is sealed before the draw.</strong> At close, all entries are locked under one fingerprint (a Merkle root) and published.
+- <strong>The draw is checkable.</strong> A secret committed in advance (plus optional public randomness) picks winners; anyone can recompute it.
+- <strong>Everything is logged</strong> in a tamper-evident, hash-chained audit log.</p>
+<p>We do not claim bots are impossible. We claim a bot gets nothing from speed, volume or many addresses, and each extra seat costs it a real verified identity. An "identity farm" (many genuinely verified accounts) still gets one entry per account; cost per account is the only brake.</p>
+<h2>The journey of a real person (6 steps)</h2>
+<ol>
+<li><strong>Prove who you are</strong>: verify your phone once before the deadline.</li>
+<li><strong>Get your ONE ticket</strong>: the server blind-signs one ticket per person; a second request is refused.</li>
+<li><strong>Enter anonymously</strong>: hand in the ticket without logging in. A ticket works once; repeats are ignored.</li>
+<li><strong>The list is sealed</strong>: at close, the Merkle root is published; nobody can add, remove or swap an entry.</li>
+<li><strong>Winners are drawn</strong>: score = H(final seed || receipt); lowest scores win; the rest form the waitlist.</li>
+<li><strong>Winners claim seats</strong> in a short window; unclaimed seats go to the next person waiting.</li>
+</ol>
+<h2>The protection rules a request meets</h2>
+<p>Real verified person · one ticket per person · genuine (signed) ticket · one use per ticket · slow-down for floods (only <em>useless</em> requests count against an address, so real neighbours on a shared address are not blocked) · decoy trap for bots that find the hidden "fast" endpoint · sale window. After close: sealed list plus public draw.</p>
+<h2>FCFS vs Fair Drop in one line</h2>
+<p>FCFS rewards speed, so bots win. Fair Drop rewards being one verified person, so speed and volume buy nothing. (FCFS feels fair as a physical queue, but online "first" means fastest connection or script, not who waited. Fair Drop could be extended with a bonus for early verifiers; how much is a policy choice.)</p>
+<h2>How to run it</h2>
+<pre><code>scripts\start.ps1      (or scripts/start.sh)   starts everything and reloads the gateway
+scripts\seed.ps1       once: 50,000 synthetic verified users (test mode)
+</code></pre>
+<p>Open http://localhost:8088 (fan site), http://localhost:8088/admin (admin / admin-demo-pass), Grafana http://localhost:3001, Prometheus http://localhost:9090. After rebuilding web servers, reload the gateway: <code>docker exec fd-nginx nginx -s reload</code>.</p>
+<hr />
+<h1>Part 2: The website</h1>
+<table>
+<thead>
+<tr>
+<th>Page</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/</code></td>
+<td>Events list (fan site), including the "Old way: first-come-first-served" comparison sale.</td>
+</tr>
+<tr>
+<td><code>/events/{id}</code>, <code>/enter/{id}</code></td>
+<td>An event, and the enter flow (get a ticket, submit it anonymously).</td>
+</tr>
+<tr>
+<td><code>/status/{id}</code>, <code>/ticket/{id}</code>, <code>/claim/{id}</code></td>
+<td>Your receipt and Merkle proof; your ticket; claiming a seat.</td>
+</tr>
+<tr>
+<td><code>/verify</code></td>
+<td>Anyone can re-check a draw: root, seed commitment, scores. Green after lock; red if the server cheated.</td>
+</tr>
+<tr>
+<td><code>/story</code></td>
+<td>Scroll-driven 3D explanation (people, bots, old way, sealed list, draw).</td>
+</tr>
+<tr>
+<td><code>/admin</code></td>
+<td>The operator console.</td>
+</tr>
+</tbody>
+</table>
+<h2>Admin: Control Room (the demo screen)</h2>
+<p>Jump bar: Live picture · How it works · Tickets &amp; queue · Server health · The bots · Is protection right? · Try to break it · Old way vs new way · What each test means · What the words mean.</p>
+<ul>
+<li><strong>Controls</strong>: crowd size (2,500 to 50,000 people), Protection ON/OFF toggle, <strong>Start bot attack</strong>, <strong>Quick safety check</strong> (18 known-good and known-bad requests), <strong>Try to break it</strong> (red team), <strong>Restart: clear everything</strong> (stops any running test, deletes test sales, results and counters, turns protection back ON; real users and the audit log are kept).</li>
+<li><strong>NEW WAY / OLD WAY</strong> buttons watch the fair sale or the FCFS replay of the same crowd.</li>
+<li><strong>Live picture</strong>: every dot is one server decision. Blue = person, orange = bot. At the gate: green = let in, red = turned away (the reason pops up), purple = decoy trap. Counters: people on the site, clicks/s, let in/s, turned away/s, real people in the draw, bot accounts that got in, bot requests turned away, and <strong>real people wrongly turned away (should always be 0)</strong>.</li>
+<li><strong>How it works</strong>: the 6-step journey and the rule cards with live "stopped" counts and which bot types each rule caught.</li>
+<li><strong>Tickets &amp; queue</strong>: tickets total/sold/left, requests in flight, database writes waiting.</li>
+<li><strong>Server health</strong>: servers up, typical and slow response times, errors, Redis and Postgres figures, per-replica status.</li>
+<li><strong>The bots</strong>: each bot type, what it tried, what it got versus what we expected.</li>
+<li><strong>Is protection right?</strong>: an independent judge re-checks every decision and fills a confusion matrix (correctly blocked, missed, wrongly blocked, correctly allowed).</li>
+<li><strong>Old way vs new way</strong>: bars for the same crowd under FCFS and Fair Drop.</li>
+<li><strong>Bot Lab</strong>: design your own test (Part 3).</li>
+</ul>
+<p>Other admin tabs: Summary, Run a sale step by step, Server details, Detailed results, Tamper checks (verify the audit chain, edit an event to watch it turn red, repair), Test tools (reset a sale, malicious-server demo, run experiments).</p>
+<hr />
+<h1>Part 3: How the bots are simulated</h1>
+<h2>Bot Lab</h2>
+<p>Admin → Control Room → <strong>Bot Lab</strong>: choose how many real people and how many bots of each type (1 to 50,000 accounts in total), or pick a preset (No bots · A few of each · Heavy attack · Only a big identity farm · Only shortcut seekers), then <strong>Run this test</strong>. The same crowd also runs through the old FCFS sale for comparison. Every bot account is a verified account allowed one entry, like a person; the test asks whether any bot can get <em>more</em> than one or slip past the rules.</p>
+<h2>The 7 bot types</h2>
+<table>
+<thead>
+<tr>
+<th>Bot</th>
+<th>What it does</th>
+<th>What stops it</th>
+<th>What we expect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Speed bot</td>
+<td>Clicks the instant the sale opens and hammers</td>
+<td>Speed buys nothing; extra clicks ignored</td>
+<td>at most 1 entry per account</td>
+</tr>
+<tr>
+<td>Flooder</td>
+<td>One account sending hundreds of mixed requests</td>
+<td>One ticket per person; flood slowed</td>
+<td>at most 1 entry per account</td>
+</tr>
+<tr>
+<td>Retry-spammer</td>
+<td>Re-sends the same request, even in parallel</td>
+<td>Same receipt back, no second entry</td>
+<td>at most 1 entry per account</td>
+</tr>
+<tr>
+<td>Address-hopper</td>
+<td>A new internet address for every request</td>
+<td>The address limit is not the defence; the ticket is</td>
+<td>at most 1 entry per account</td>
+</tr>
+<tr>
+<td>Identity farm</td>
+<td>Many real, verified, bought accounts used properly</td>
+<td>Not stopped; only cost</td>
+<td>1 entry per bought account</td>
+</tr>
+<tr>
+<td>Shortcut seeker</td>
+<td>Reads the API, uses a hidden "fast" endpoint</td>
+<td>Decoy trap: burns its ticket, worthless receipt</td>
+<td>0 entries</td>
+</tr>
+<tr>
+<td>Human mimic</td>
+<td>Walks the real steps slowly</td>
+<td>Looks human, so treated as a human</td>
+<td>1 entry per account</td>
+</tr>
+</tbody>
+</table>
+<h2>Real people and ground truth</h2>
+<p>Real people are simulated as one device, one attempt, polite retries. The attack engine labels every simulated identity (<code>kind|operator|profile</code>) for evaluation only; <strong>allocation never reads these labels</strong>. The judge compares each server decision with that ground truth.</p>
+<h2>How a run works</h2>
+<p>Locust generates the load from the attack container through the gateway; a scenario plan decides who attacks when; results go to <code>reports/&lt;experiment&gt;/</code>, and the Control Room shows them live from a decision feed (a Redis stream). That feed and its per-profile breakdown draw the dots and fill the bots table.</p>
+<hr />
+<h1>Part 4: Reference documents</h1>
+<h2>4.1 Architecture</h2>
+<pre><code>browser ──► nginx :8088 ─┬─ /api/*   ─► api1 api2 api3 (Go, stateless, chi)  ─┬─► Redis (hot path: Lua, TIME, ZSETs, Streams)
+                         ├─ /attack/ ─► attack engine (Locust + control API)  └─► Postgres (permanent record)
+                         └─ /        ─► Next.js frontend                      worker (timers, ledger, drift-free ticks)
+                                                                                 │
+Prometheus ◄── scrape api1-3 + worker ── Grafana (provisioned &quot;Fair Drop&quot; dashboard)
+</code></pre>
+<h4>Why this shape</h4>
+<ul>
+<li><strong>Replicas are stateless.</strong> Every decision that must be unique (one token per identity, one spend per token, one seat per rank, state transitions) is a single Redis Lua script, so any replica can serve any request and any replica can die mid-window. Redis <code>TIME</code> is the only clock; replicas never compare their own wall clocks.</li>
+<li><strong>Redis is the hot path, Postgres the record.</strong> Registration touches only Redis. Events are appended to a Redis Stream; the worker's ledger consumer batches them into Postgres inside a hash chain (<code>audit_log</code>) and copies entries/allocations. Unique constraints in Postgres are the second line of defence for the integrity counters.</li>
+<li><strong>Allocation is timing-independent.</strong> The lottery draws over the <em>set</em> of accepted receipts, so arrival order, request volume and IP never enter the score.</li>
+<li><strong>Defences are for availability only.</strong> Per-IP and per-account rate limits keep the service alive under flood, and the tarpit decoy and spent-token set cost nothing to honest users. None of them is an input to allocation; turning them off (Test tools) must not change who wins.</li>
+</ul>
+<h4>Modules (Go package <code>internal/app</code>, crypto in <code>internal/fdcrypto</code>)</h4>
+<table>
+<thead>
+<tr>
+<th>module</th>
+<th>file</th>
+<th>job</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>auth</td>
+<td><code>auth.go</code></td>
+<td>simulated OTP, JWT, admin login, eligibility cutoff timestamp</td>
+</tr>
+<tr>
+<td>issuer</td>
+<td><code>entry.go</code> (<code>hToken</code>)</td>
+<td>per-drop key, blind-sign once per identity</td>
+</tr>
+<tr>
+<td>entry</td>
+<td><code>entry.go</code> (<code>hRegister</code>, <code>hTarpit</code>)</td>
+<td>sessionless register, spend token, receipt, decoy</td>
+</tr>
+<tr>
+<td>guard</td>
+<td><code>guard.go</code></td>
+<td>Lua token-bucket per IP and per account; <code>X-Sim-IP</code> only in TEST_MODE</td>
+</tr>
+<tr>
+<td>lifecycle</td>
+<td><code>lifecycle.go</code></td>
+<td>CAS state machine, timers, manual admin advance</td>
+</tr>
+<tr>
+<td>draw</td>
+<td><code>draw.go</code></td>
+<td>lock (Merkle), reveal, drand, ranking, counterfactuals, verify bundle</td>
+</tr>
+<tr>
+<td>claim</td>
+<td><code>claim.go</code></td>
+<td>claim window, timeout, waitlist cascade</td>
+</tr>
+<tr>
+<td>baseline</td>
+<td><code>baseline.go</code></td>
+<td>classic FCFS sale for comparison</td>
+</tr>
+<tr>
+<td>ledger</td>
+<td><code>ledger.go</code></td>
+<td>stream → hash-chained audit log, chain verification, integrity counters</td>
+</tr>
+<tr>
+<td>testkit</td>
+<td><code>testkit.go</code></td>
+<td>TEST_MODE seeding, reset, labels, malicious mode, kill</td>
+</tr>
+<tr>
+<td>live/metrics</td>
+<td><code>live.go</code>, <code>metrics.go</code></td>
+<td>SSE snapshot, Prometheus, replica heartbeats</td>
+</tr>
+</tbody>
+</table>
+<h4>Data flow of one entry</h4>
+<p><code>fan</code> → <code>POST /token</code> (JWT) → guard → Lua <em>issue</em> (SETNX per user per drop, then sign) → <code>POST /register</code> (no JWT) → verify signature → Lua <em>register</em> (SADD spent; HSET entry; XADD stream) → receipt.
+At LOCK the worker reads all entries, builds the Merkle tree, stores the root, publishes it. At DRAWN: reveal seed, fetch beacon, rank, write <code>allocations</code> and <code>counterfactuals</code> (FCFS / naive lottery / Fair Drop computed on the <em>same</em> recorded attempts).</p>
+<h4>Failure handling</h4>
+<ul>
+<li>nginx retries idempotent requests on the next replica; <code>register</code> is idempotent by design (deterministic receipt), <code>token</code> replays return the same signature.</li>
+<li><code>POST /test/die</code> exits a replica with 137; compose <code>restart: unless-stopped</code> brings it back; the live monitor shows it DOWN then healthy; the integrity counters must stay zero (experiment 6).</li>
+<li>Worker restarts resume from the Redis consumer-group offset; the ledger chain continues from <code>audit_head</code>.</li>
+</ul>
+<hr />
+<h2>4.2 Cryptography</h2>
+<p>Frozen formats are in <code>backend/internal/fdcrypto/merkle.go</code> and pinned by <code>docs/test-vectors.json</code> (generated by Go, checked by Go, Python and the browser).</p>
+<h4>1. One identity, one entry, unlinkable: blind signatures</h4>
+<ul>
+<li><strong>Scheme:</strong> RFC 9474 <code>RSABSSA-SHA384-PSS-Deterministic</code>, RSA-2048, one key pair <strong>per drop</strong> (Go: <code>cloudflare/circl</code>; browser: <code>@cloudflare/blindrsa-ts</code>).</li>
+<li>The fan's browser makes a random <code>token_secret</code>, blinds it, and sends the blinded message <strong>with their session</strong>. The server checks eligibility, issues <strong>at most one</strong> signature per identity (Redis Lua), and signs the blinded value, so it never sees <code>token_secret</code>.</li>
+<li>The fan later sends <code>token_secret</code> + unblinded signature to <code>/register</code> with <strong>no session</strong>. The server verifies the signature against the drop public key and spends the token once. The server therefore knows <em>that</em> a valid, unique token entered, not <em>whose</em>.</li>
+<li><strong>Fallback:</strong> <code>BLIND_MODE=plain</code> signs the token directly (RSA-PSS). <code>/register</code> verifies exactly the same signature either way, so the endpoint contract is unchanged. Plain mode is linkable by the server; that is the documented price of the fallback.</li>
+</ul>
+<h4>2. Receipts</h4>
+<p><code>receipt_id = SHA-256("fd:receipt:v1" ‖ token_secret)</code>: deterministic, so a retried registration returns the same receipt. The server returns an ECDSA P-256 signature over <code>(drop, receipt, tier)</code>; the fan keeps it as proof the server accepted the entry.</p>
+<h4>3. Publicly locked entry list: Merkle tree</h4>
+<ul>
+<li>Leaf = <code>SHA-256(0x00 ‖ receipt ‖ tier)</code> (domain separated, <strong>tier is bound into the leaf</strong> so tiers cannot be swapped later); node = <code>SHA-256(0x01 ‖ L ‖ R)</code>; leaves sorted by receipt; odd last node duplicated.</li>
+<li>The root is published when the drop goes LOCKED, <strong>before</strong> the seed is revealed. Anyone can ask for an inclusion proof for their receipt and check it against the root.</li>
+<li>A server that drops an entry must publish a root that doesn't contain the victim's receipt; the victim's proof fails and the verify page turns red. Independently, the audit ledger recorded the accepted receipt, so the admin integrity panel reports <code>missing_receipts &gt; 0</code>.</li>
+</ul>
+<h4>4. Seed commit-reveal and the draw</h4>
+<ol>
+<li>At drop creation the server picks <code>seed</code> (32 random bytes) and publishes <code>seed_hash = SHA-256(seed)</code>.</li>
+<li>After LOCKED the seed is revealed. Anyone checks <code>H(seed) == seed_hash</code>.</li>
+<li>Optional beacon: a drand quicknet round that <strong>did not exist at lock time</strong> (computed by <code>DrandRoundAfter</code>). It is mixed in so even a server that grinds its seed cannot choose the outcome. Its BLS signature check is delegated to drand clients (documented deviation).</li>
+<li><code>final = SHA-256(seed ‖ merkle_root ‖ beacon?)</code>; <code>score(receipt) = SHA-256(final ‖ receipt)</code>; <strong>lowest score wins</strong>. Ranking is a pure function: ranks 1..N fill seats by tier; the rest is the ordered waitlist.</li>
+</ol>
+<h4>5. Tickets</h4>
+<p>ECDSA P-256 signature over the claimed ticket; a QR code carries it; verification needs only the drop's EC public key.</p>
+<h4>6. What is <em>not</em> claimed</h4>
+<ul>
+<li>Blind signatures do not stop one person from owning several verified identities. That is an identity-cost question, measured by the Sybil experiment, not solved cryptographically.</li>
+<li>drand beacon BLS verification is left to drand clients; the verifier checks that the round is the right one and that its randomness is the one used.</li>
+<li>JWT secrets and the demo credentials in <code>docker-compose.yml</code> are for the demo only.</li>
+</ul>
+<hr />
+<h2>4.3 Attack Engine</h2>
+<p><code>attack_engine/</code>: Locust + a scenario runner. Everything is driven by a seeded plan (each scenario has a fixed seed), so who acts when, from which IP and with which tier is identical across runs; <code>/test/reset</code> only rotates the drop's own seed and keys.</p>
+<h4>Model</h4>
+<ul>
+<li><strong>Identity pool</strong>: 50,000 synthetic verified users <code>t_000001…</code> (<code>POST /test/seed</code>).</li>
+<li><strong>Operators</strong>: a bot operator owns N identities and an IP pool, runs one profile. Humans are operator <code>humans</code>, one identity and one IP each.</li>
+<li><strong>Plan</strong> (<code>build_plan</code>): a time-ordered list of actors <code>{uid, kind, op, profile, offset, tier, ip}</code>. Bots attack at open; humans arrive in a "rush" (60% right after open, the rest spread).</li>
+<li><strong>Actor queue</strong>: each Locust user pulls the next actor whose offset is due; worker processes take disjoint slices. Done markers and per-worker metrics/tokens JSON are merged by the runner.</li>
+</ul>
+<h4>Profiles</h4>
+<table>
+<thead>
+<tr>
+<th>profile</th>
+<th>behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HUMAN</td>
+<td>login, think time, token, register, occasional retry on failure</td>
+</tr>
+<tr>
+<td>SPEED_BOT</td>
+<td>no think time, immediate token+register, a few repeats</td>
+</tr>
+<tr>
+<td>FLOOD_BOT</td>
+<td>hundreds of requests per identity from few IPs</td>
+</tr>
+<tr>
+<td>RETRY_BOT</td>
+<td>persistent retries with backoff on 429/5xx</td>
+</tr>
+<tr>
+<td>PROXY_ROTATOR</td>
+<td>a new <code>X-Sim-IP</code> every request out of a 2,000-IP pool</td>
+</tr>
+<tr>
+<td>SYBIL_OPERATOR</td>
+<td>many identities, each acting once, one IP pool</td>
+</tr>
+<tr>
+<td>API_SCRAPER</td>
+<td>skips the UI, finds <code>register-fast</code> (the tarpit)</td>
+</tr>
+<tr>
+<td>UI_MIMIC</td>
+<td>follows the page sequence with human-like delays (no JS execution; see ADR-10)</td>
+</tr>
+</tbody>
+</table>
+<p>Every profile has a Fair Drop flow and an FCFS flow so the same actors can attack both.</p>
+<h4>Experiments (<code>python -m attack_engine run expN [--scale S] [--also-fcfs]</code>)</h4>
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>what</th>
+<th>what we look at</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>exp1</td>
+<td>50,000 humans, no bots</td>
+<td>baseline human win rate, latency, integrity</td>
+</tr>
+<tr>
+<td>exp2</td>
+<td>20 operators × 10 identities, 2,000 rotating IPs each, flooding</td>
+<td>bot advantage ratio vs FCFS/naive</td>
+</tr>
+<tr>
+<td>exp3</td>
+<td>Sybil scale 100 / 1,000 / 10,000 identities</td>
+<td>seats per operator, cost per seat</td>
+</tr>
+<tr>
+<td>exp4</td>
+<td>~50,000 bot requests + 1 human</td>
+<td>that human's chance vs the ideal</td>
+</tr>
+<tr>
+<td>exp5</td>
+<td>API scrapers vs UI-mimic bots</td>
+<td>tarpit hits, entries accepted</td>
+</tr>
+<tr>
+<td>exp6</td>
+<td>kill a replica mid-window (<code>/test/die</code>)</td>
+<td>errors, retries, integrity, recovery</td>
+</tr>
+<tr>
+<td>exp7</td>
+<td>malicious server drops one entry</td>
+<td>victim verify red, <code>missing_receipts</code> &gt; 0</td>
+</tr>
+</tbody>
+</table>
+<p>Run from Admin → Test tools, the control API (<code>POST :9200/run</code>), or <code>scripts/run_experiment.sh|ps1</code>, <code>scripts/run_all_experiments.sh|ps1</code>. <code>--scale 0.1</code> runs 10% of the population.</p>
+<h4>Output</h4>
+<p><code>reports/&lt;experiment&gt;/{results.json, results.csv, summary.md, charts/}</code>; live FCFS replays go to <code>.../live_fcfs/</code>. Results are also pushed to <code>/test/experiments</code> so the admin Fairness tab shows real recorded data.</p>
+<h4>Protection self-test (<code>python -m attack_engine selftest</code>, or Admin → Control Room → "Quick safety check")</h4>
+<p>Creates a fresh mini-sale and sends 18 cases whose expected answer is fixed in advance: honest entry, idempotent retry, token reuse, forged signature, tampered token, second token request, unauthenticated request, late signup (ineligible), decoy endpoint, a 150-request flood from one IP (some 429) while a normal person on another IP still gets in, entering after close, token after close, and after locking: the sealed list holds exactly the legitimate entries (forged/decoy/late excluded) and the integrity counters are zero. Last run: <strong>18 / 18 passed</strong>.</p>
+<hr />
+<h2>4.4 Red Team</h2>
+<p>Goal: find ways for a bot owner to win more than "one entry per verified person", then fix them. Run it: <code>python -m attack_engine redteam</code>, or Admin → Control Room → <strong>Try to break it</strong>. 17 tricks (two rounds), each with the attacker's aim, the move, and a verdict (<code>held</code> / <code>BROKEN</code>).</p>
+<h4>What the first run found (before any fix): 6 real holes</h4>
+<p>Saved as <code>reports/redteam/before_fix.json</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Trick</th>
+<th>What worked</th>
+<th>Why it matters</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>One phone, many identities</td>
+<td>The same number written 5 ways ("+1 555…", "1-(555)…", "00 1555…") made 5 separate verified identities</td>
+<td>Breaks "one person, one entry": one SIM could be many people</td>
+<td>Phone reduced to digits before it becomes an identity</td>
+</tr>
+<tr>
+<td>Guess a login code</td>
+<td>Unlimited guesses on a 6-digit code</td>
+<td>A distributed guesser takes over a victim's account</td>
+<td>5 wrong guesses destroy the code</td>
+</tr>
+<tr>
+<td>Spam login codes</td>
+<td>8 of 8 codes sent to one number</td>
+<td>SMS cost / harassment</td>
+<td>Max 3 codes per number per 10 min</td>
+</tr>
+<tr>
+<td>Guess the admin password</td>
+<td>No lockout</td>
+<td>Brute force of the admin login</td>
+<td>5 wrong passwords per address = 5 min lockout</td>
+</tr>
+<tr>
+<td>Enormous requests</td>
+<td>64 MB bodies accepted on public endpoints</td>
+<td>Memory exhaustion by a flood of huge requests</td>
+<td>64 KB cap at the gateway and the server</td>
+</tr>
+<tr>
+<td>Hijack a retry key</td>
+<td>Reusing someone's <code>Idempotency-Key</code> with your own ticket broke their safe retry (they got "token used")</td>
+<td>Targeted griefing</td>
+<td>The retry key is scoped to its own ticket</td>
+</tr>
+</tbody>
+</table>
+<p>After the fixes the same 14 tricks: 12 held, 1 informational, 1 demo-only (<code>reports/redteam/after_fix.json</code>). Each fix has a permanent Go test.</p>
+<h4>Round 2: one more hole, two more checks</h4>
+<p>Saved as <code>reports/redteam/round2_before_fix.json</code> (before) and <code>after_fix_in_network.json</code> (after, run from inside the Docker network: 17 tricks, 15 held, 0 broken, the rest informational / demo-only).</p>
+<table>
+<thead>
+<tr>
+<th>Trick</th>
+<th>What worked</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Flood from the same address as real people</strong></td>
+<td>24 flooders on one address used up the address's quota, so a real person on the same office/campus/mobile address was told "too many requests"</td>
+<td>Only <em>useless</em> requests (forged or reused tickets, repeated ticket asks) count against an address; a valid first-time request is never throttled by neighbours' noise (Go test <code>TestFlooderCannotLockOutNeighboursOnTheSameAddress</code>)</td>
+</tr>
+<tr>
+<td>Hammer the big public download</td>
+<td>Held: the finished list never changes, so it is cached</td>
+<td>none needed</td>
+</tr>
+<tr>
+<td>Hold 1,500 connections open (Slowloris)</td>
+<td>Held from inside the network: silent connections are dropped after 10 s. From the host laptop Docker Desktop's port forwarder stalls under 1,500 hung connections; that is a laptop artefact, not the product</td>
+<td>none needed</td>
+</tr>
+</tbody>
+</table>
+<h4>What already held</h4>
+<p>Ticket from another sale (400) · a login card with no signature (401) · reading the secret seed early (only its fingerprint is public) · reading tier crowding to pick the emptiest tier (hidden until the list is sealed) · a second ticket in another tier (409) · lying about the address in headers (the gateway overwrites it; 48 of 80 throttled).</p>
+<h4>Not holes, but you should know</h4>
+<ul>
+<li><strong>Identity farm</strong>: a bot owner who owns many <em>genuinely verified</em> accounts gets one entry per account. Nothing in the entry flow can tell them apart from many people. Defence = the cost per verified account (see experiment 3 and the cost-per-seat figures).</li>
+<li><strong>Tier switch</strong>: a blind signature can't carry the tier, so a ticket asked for in Gold can be entered as General. Harmless because crowding is hidden during the sale.</li>
+<li><strong>Demo secret</strong>: the demo runs with published passwords, so a token signed with the demo JWT secret is accepted <em>here</em>. The server now refuses to start outside <code>TEST_MODE</code> with the demo admin password, JWT secret or test key.</li>
+<li><strong>Phone formats</strong>: "5551234567" vs "15551234567" (national vs international) still differ; closing that needs a phone library with a default country.</li>
+<li><strong>Admin lockout is per address</strong>: a distributed guesser gets 5 tries per address. Use a strong <code>ADMIN_PASSWORD</code>.</li>
+<li>Dev ports for Redis, Postgres and the three web servers are bound to 127.0.0.1 only.</li>
+<li>After rebuilding web servers, reload the gateway (<code>docker exec fd-nginx nginx -s reload</code>; <code>scripts/start.*</code> does it). The gateway resolves the servers once at start-up; without a reload one server takes all the load. This showed up for real during testing: one server handled 50,499 requests while the other two handled about 80 each.</li>
+</ul>
+<hr />
+<h2>4.5 Fairness Metrics</h2>
+<p>Implemented in <code>scoring/metrics.py</code> (pure functions, tested in <code>scoring/test_scoring.py</code>), fed by the server's counterfactuals and the TEST_MODE label file. Labels are <strong>evaluation only</strong>; allocation never reads them.</p>
+<table>
+<thead>
+<tr>
+<th>metric</th>
+<th>definition</th>
+<th>target</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Bot advantage ratio</strong></td>
+<td>(bot share of seats) ÷ (bot share of participating verified identities)</td>
+<td>≤ 1 (1 = a bot identity is exactly as likely to win as a human one)</td>
+</tr>
+<tr>
+<td><strong>Seats per operator</strong></td>
+<td>seats won by all identities of one operator</td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Cost per seat</strong></td>
+<td><code>identities × identity_cost ÷ seats</code> per operator. <code>identity_cost</code> is an explicit, configurable assumption (<code>FD_IDENTITY_COST_USD</code>, default $3)</td>
+<td>rises as an operator buys identities</td>
+</tr>
+<tr>
+<td><strong>Human win rate</strong></td>
+<td>humans who won ÷ humans who entered</td>
+<td>≥ no-bot baseline</td>
+</tr>
+<tr>
+<td><strong>Integrity</strong></td>
+<td>six violation counters: oversold, duplicate entries, duplicate seats, missing receipts, broken Merkle, invalid transitions</td>
+<td>all 0</td>
+</tr>
+<tr>
+<td><strong>Latency</strong> p50/p95/p99, <strong>error rate</strong>, <strong>rps</strong></td>
+<td>from the attack engine's own per-request recorder (merged across Locust workers) and the server histograms</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h4>Counterfactuals on the same attempts</h4>
+<p>The server records every entry attempt (<code>actor</code>, tier, accepted?). Three policies are scored on that stream, each with the per-account cap of 4 seats:
+- <strong>FCFS</strong>: first requests in arrival order win. Volume and speed matter.
+- <strong>Naive lottery</strong>: every request is a ticket, so volume matters; averaged over 200 independent re-draws.
+- <strong>Fair Drop</strong>: the real draw plus its expectation over 200 re-draws (a single draw is noisy, the expectation is the honest comparison).</p>
+<p>A <strong>live FCFS</strong> run (<code>--also-fcfs</code>) replays the identical actors against the real baseline sale as a cross-check of the FCFS counterfactual.</p>
+<h4>Honest limits</h4>
+<ul>
+<li>The ratio uses identities as the unit. An operator with more <em>identities</em> wins proportionally more seats; that is the Sybil experiment (3), reported as seats-per-operator and cost-per-seat, not hidden.</li>
+<li>Rate-limited requests and requests after close are excluded from "attempts" (documented deviation); they never affect allocation either way.</li>
+<li>Bot profiles are our best-effort realistic models, not a proof against every possible attacker.</li>
+</ul>
+<h4>Protection accuracy: false positives and false negatives</h4>
+<p><code>GET /admin/drops/{id}/protection</code> re-judges every recorded decision (the <em>decision feed</em>: one record per accept/reject with reason, actor and IP) with an <strong>oracle built from facts the server did not decide</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>decision</th>
+<th>oracle (independent facts)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>token request</td>
+<td>eligible iff <code>verified_at ≤ cutoff</code> (from the user store), window open at that instant (Redis-stamped <code>at_OPEN</code>/<code>at_CLOSED</code>), no earlier token for that actor in the feed</td>
+</tr>
+<tr>
+<td>register</td>
+<td>window open, receipt not yet registered earlier in the feed</td>
+</tr>
+<tr>
+<td>rejected "forged signature"</td>
+<td>the stored token+signature are verified again against the drop public key; it must fail</td>
+</tr>
+<tr>
+<td>rejected "token reused"</td>
+<td>an earlier accepted entry with the same receipt must exist</td>
+</tr>
+<tr>
+<td>rejected "window closed"</td>
+<td>event time must be on/after the stamped close time</td>
+</tr>
+<tr>
+<td>rate-limited (429)</td>
+<td>the counter value and limit stored with the event must show count &gt; limit</td>
+</tr>
+</tbody>
+</table>
+<p>Confusion matrix (positive = "should be rejected"): <strong>TP</strong> correctly blocked, <strong>FP</strong> good request wrongly blocked, <strong>FN</strong> bad request wrongly allowed, <strong>TN</strong> correctly allowed. Throttled (429) first attempts are a <em>delay</em> for a legitimate user and are counted separately; whether they finally got in is reported per person (<code>people.*</code>, "locked out" = a real false positive for a person). Idempotent retries are "absorbed" (no second entry).</p>
+<p>Bot/human labels split the matrix by kind (TEST_MODE only). Limits: the oracle checks the server's <em>consistency</em> with its own rules and the independently stored facts; it cannot tell a genuinely sophisticated bot from a person (that is why the allocation never depends on it), and <code>rate_limited</code> correctness rests on the stored counter. The black-box <strong>self-test</strong> (below) complements it: expected answers are fixed before sending.</p>
+<p>Production privacy note: outside TEST_MODE the feed stores no actor or IP for token events, so it cannot be used to link a token request to a later anonymous registration.</p>
+<h4>Per bot type (<code>by_profile</code>)</h4>
+<p><code>/protection</code> also returns, for each bot type and for real people: accounts, accounts that got an entry, requests sent, accepted / turned away / absorbed / decoy, and the reasons for each turn-away. Labels carry <code>kind|operator|profile</code> (evaluation only; allocation never reads them). Request totals count a person once: getting a ticket is a step, entering is the outcome. The old-sale oracle orders decisions by the Redis TIME stamped inside the atomic script, so two requests handled by different servers in the same millisecond can't be mis-ordered.</p>
+<hr />
+<h2>4.6 Tests Explained</h2>
+<p><strong>Plain names used on the admin Control Room page</strong> (technical name in brackets):
+Quick safety check (self-test) · Try to break it (red team) · Bot attack (load test) · Old way vs new way (before/after) · Full walkthrough (smoke test) · Code checks (unit tests) · The 7 big experiments.
+The same list is on the Control Room page under "What each test means", together with the sale's stages in plain words.</p>
+<p>There are four kinds of checks. Each answers a different question.</p>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th>Question it answers</th>
+<th>When it runs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A. Unit tests</strong></td>
+<td>"Is each small piece of code correct on its own?"</td>
+<td>Before you ship, no website needed</td>
+</tr>
+<tr>
+<td><strong>B. Smoke test</strong></td>
+<td>"Does the whole thing work once, start to finish?"</td>
+<td>Needs the stack running</td>
+</tr>
+<tr>
+<td><strong>C. Quick safety check = protection self-test (18 cases)</strong></td>
+<td>"Does the gate let the right people in and keep the wrong ones out?"</td>
+<td>Button in Admin → Control Room</td>
+</tr>
+<tr>
+<td><strong>D. The 7 big experiments</strong></td>
+<td>"Is it actually fairer than first-come-first-served, under attack?"</td>
+<td>Needs the stack running; takes minutes</td>
+</tr>
+</tbody>
+</table>
+<p>Everything below is a real check that exists in the repo.</p>
+<hr />
+<h4>A. Unit tests (small pieces, fast, no website needed)</h4>
+<h5>Go backend: <code>backend/internal/fdcrypto/fdcrypto_test.go</code> (the maths)</h5>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>In plain words</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TestMerkleSizes</code></td>
+<td>The "sealed list fingerprint" is computed correctly for lists of awkward sizes (0, 1, 2, 3, 5, 7, 8, 1000, 4097 and 50,000 entries). Every entry's proof must check out, and changing an entry's tier must break it.</td>
+</tr>
+<tr>
+<td><code>TestMerkleOrderIndependentAndDuplicates</code></td>
+<td>Shuffling the list gives the same fingerprint, and a duplicate entry is rejected.</td>
+</tr>
+<tr>
+<td><code>TestDrawDeterministic</code></td>
+<td>Same inputs always give the same winners. Nothing random at draw time.</td>
+</tr>
+<tr>
+<td><code>TestBlindFlowAndPlainFallback</code></td>
+<td>The "ticket the server signed without seeing" works, and the simpler fallback works too.</td>
+</tr>
+<tr>
+<td><code>TestWriteVectors</code></td>
+<td>Writes the answer key (<code>docs/test-vectors.json</code>) that the Python and browser checks are compared against.</td>
+</tr>
+</tbody>
+</table>
+<h5>Go backend: <code>backend/internal/app/app_test.go</code> (the rules, run against a real Redis and Postgres)</h5>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>In plain words</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TestAuthAndTestkitHidden</code></td>
+<td>In production mode the test backdoors (<code>/test/...</code>) don't exist (404). Admin pages refuse no login, a normal fan's login and a garbage login. A wrong one-time code is refused and the right one logs you in.</td>
+</tr>
+<tr>
+<td><code>TestEligibilityCutoff</code></td>
+<td>Someone verified after the cutoff can't get a ticket token (403), someone verified before it can, and the late person can still browse the page.</td>
+</tr>
+<tr>
+<td><code>TestConcurrentDuplicateIssuance</code></td>
+<td>200 simultaneous requests from one person (each with a different ticket) produce exactly ONE token; the other 199 are refused. A harmless retry of the same request returns the same signature.</td>
+</tr>
+<tr>
+<td><code>TestEntryValidReusedBadSigIdempotent</code></td>
+<td>A good token enters; 300 simultaneous retries all get the same receipt and still only ONE entry exists; reusing it without the retry key is refused; a forged one is refused; an invalid tier is refused.</td>
+</tr>
+<tr>
+<td><code>TestTarpitBurnsToken</code></td>
+<td>The decoy "fast lane" fools bots but never puts them in the real list.</td>
+</tr>
+<tr>
+<td><code>TestIllegalTransitionsAndWindowClosed</code></td>
+<td>The sale can't skip steps (e.g. draw before lock), and nothing is accepted after close.</td>
+</tr>
+<tr>
+<td><code>TestFullDrawIsReproducibleFromBundle</code></td>
+<td>Download the public data, recompute the draw yourself, get the same winners.</td>
+</tr>
+<tr>
+<td><code>TestClaimsRaceExpiryCascadeNoOversell</code></td>
+<td>20 winners each hammer "claim" 5 times at once for 5 seats: exactly 5 seats are given out, never the same seat twice. Second half: if nobody claims, seats pass down the waitlist, exactly the right number stay reserved, and a claim that arrives too late is refused (410).</td>
+</tr>
+<tr>
+<td><code>TestMaliciousServerDetected</code></td>
+<td>We make the server secretly drop one person's entry. That person's proof request says "not included", the sealed count is 9 not 10, and the safety check reports one missing receipt.</td>
+</tr>
+<tr>
+<td><code>TestBaselineFCFSNoOversell</code></td>
+<td>The old first-come-first-served sale: 200 buyers × 3 tries for 10 seats sells exactly 10, never more. (So the comparison is fair: the old way is unfair to people, not buggy.)</td>
+</tr>
+<tr>
+<td><code>TestAllocateCapAndOrder</code></td>
+<td>The "plain lottery with a per-person cap" used in comparisons: one bot sends 3 requests for 3 seats with a cap of 2, so it gets 2 and a real person gets the third.</td>
+</tr>
+</tbody>
+</table>
+<h5>Python: <code>scoring/test_scoring.py</code> (the fairness numbers)</h5>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>In plain words</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>test_bot_advantage_ratio</code></td>
+<td>"Bot advantage" = share of seats ÷ share of crowd. 1.0 is fair, 50 is terrible.</td>
+</tr>
+<tr>
+<td><code>test_naive_vs_fairdrop_monte_carlo</code></td>
+<td>Simulated 1000s of times: a plain lottery can be gamed by extra tickets; Fair Drop can't.</td>
+</tr>
+<tr>
+<td><code>test_percentile</code></td>
+<td>The "slowest 1%" style numbers are calculated correctly.</td>
+</tr>
+</tbody>
+</table>
+<h5>Python: <code>verifier/test_verify.py</code></h5>
+<p>The stand-alone verifier script must reproduce the Go answer key exactly (fingerprint, seed mix, ordering, proof paths). It also confirms a proof fails for a wrong tier. Two independent programs agreeing = trust.</p>
+<h5>Python: <code>attack_engine/test_attack_engine.py</code> (the bot simulator itself)</h5>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>In plain words</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>test_all_eight_profiles_have_both_flows</code></td>
+<td>All 8 bot types exist and know both sale types.</td>
+</tr>
+<tr>
+<td><code>test_plan_is_reproducible_and_identities_are_unique</code></td>
+<td>Same settings give the same crowd; no two people share an identity.</td>
+</tr>
+<tr>
+<td><code>test_operator_to_identity_and_ip_mapping</code></td>
+<td>Each bot operator controls the identities and IPs we say it does.</td>
+</tr>
+<tr>
+<td><code>test_labels_match_plan</code></td>
+<td>The "this one is a bot / this one is a person" answer key matches what was sent. This is the key the protection scorecard relies on.</td>
+</tr>
+<tr>
+<td><code>test_sybil_scaling_has_three_sizes_and_exp4_has_one_human</code></td>
+<td>The "bot buys more identities" experiment has the right crowd shapes.</td>
+</tr>
+<tr>
+<td><code>test_pool_overflow_is_rejected</code></td>
+<td>Asking for more bots than identities exist gives a clear error, not silent wrong results.</td>
+</tr>
+</tbody>
+</table>
+<h5>Browser code: <code>frontend/lib/fdcrypto.test.ts</code></h5>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>In plain words</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>receipt id</td>
+<td>The browser computes the same receipt ID as the server.</td>
+</tr>
+<tr>
+<td>merkle root, proof, ordering</td>
+<td>The browser gets the same fingerprint, proof and winner order as the Go answer key.</td>
+</tr>
+<tr>
+<td><code>verifyBundle</code></td>
+<td>The "Verify a draw" page accepts an honest draw and flags one with a dropped entry.</td>
+</tr>
+<tr>
+<td>blinds in JS, Go signs…</td>
+<td>End to end: the browser blinds a ticket, the server signs it blind, the browser unblinds, the server accepts it, the receipt checks out. (Skipped unless you set <code>FD_E2E=1</code> and the stack is running.)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h4>B. Full walkthrough (the "smoke test"): <code>tests/smoke.py</code></h4>
+<p>One quick story against the running site, with 30 people and 7 seats: create a sale → open → each person gets one ticket token (a second request is refused) → enters (a retry gets the same receipt, a reuse is refused) → a forged ticket is refused → an illegal jump to "draw" is refused → close → lock (30 entries sealed, a person's proof matches the root) → draw → winners claim, except two who stay silent → their seats pass to the next people on the waitlist → check the safety counters are zero and the audit log is unbroken. It prints <code>SMOKE OK</code> if everything held.</p>
+<h4>C. Quick safety check (the "protection self-test", 18 cases)</h4>
+<p>Button: <strong>Admin → Control Room → Quick safety check</strong>. Code: <code>attack_engine/selftest.py</code>.
+Each case has its expected answer written down BEFORE the request is sent, so a wrong accept (<strong>false negative</strong>) or wrong reject (<strong>false positive</strong>) shows as a red row.</p>
+<table>
+<thead>
+<tr>
+<th>Group</th>
+<th>Cases</th>
+<th>Expected</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Real people</td>
+<td>honest entry, retry after glitch, honest entry after someone else's forgery, flooded person from a clean IP, normal person during a flood</td>
+<td>accepted</td>
+</tr>
+<tr>
+<td>Cheating</td>
+<td>reuse a token, forged signature, tampered token, second token request, no sign-in, signed up after cutoff</td>
+<td>rejected</td>
+</tr>
+<tr>
+<td>Decoy</td>
+<td>bot uses the hidden "fast" endpoint</td>
+<td>looks accepted, never in the real list</td>
+</tr>
+<tr>
+<td>Overload</td>
+<td>150 requests from one IP</td>
+<td>some throttled, site stays up</td>
+</tr>
+<tr>
+<td>Timing</td>
+<td>entry after close, token after close</td>
+<td>rejected</td>
+</tr>
+<tr>
+<td>After the lock</td>
+<td>list contains the honest entry; list has exactly the legitimate entries; safety counters zero</td>
+<td>as stated</td>
+</tr>
+</tbody>
+</table>
+<h4>D. The 7 experiments (<code>attack_engine</code>, results in <code>reports/</code>)</h4>
+<p>Run with <code>scripts/run_all_experiments.sh</code>. Each uses real bot traffic at scale and compares first-come-first-served, a plain lottery and Fair Drop on the same attempts.
+They answer "does it hold under attack?", not "is the code correct?".</p>
+<h4>E. Try to break it (the "red team", 14 tricks): <code>attack_engine/redteam.py</code></h4>
+<p>We play the bot owner and try 14 real tricks against the live system (see <a href="RED_TEAM.md">RED_TEAM.md</a>). Button: <strong>Admin → Control Room → Try to break it</strong>. Each hole it finds became a permanent code check (<code>TestOnePhoneIsOneIdentityAndCodesAreCapped</code>, <code>TestWrongGuessesKillTheCodeAndAdminIsLockedOut</code>, <code>TestRetryKeyBelongsToItsOwnTicketAndBigBodiesAreRefused</code>).</p>
+<hr />
+<h4>How to run each kind</h4>
+<pre><code class="language-bash">bash scripts/gotest.sh                        # A: Go tests
+python scoring/test_scoring.py                # A: fairness maths
+python verifier/test_verify.py                # A: Python vs Go
+cd frontend &amp;&amp; npx vitest run                 # A: browser maths (add FD_E2E=1 for the live blind-signature test)
+python tests/smoke.py                         # B: smoke (defaults to http://localhost:8088)
+# C: Admin → Control Room → Quick safety check
+bash scripts/run_all_experiments.sh           # D
+python -m attack_engine redteam               # E: try to break it
+</code></pre>
+<h4>What none of these prove</h4>
+<ul>
+<li>They don't prove 50,000 people at the same instant (one laptop peaked around 2,000 connections). That needs several load machines.</li>
+<li>The scorecard checks that the server is consistent with the facts it can verify. It can't read a bot's "intent". A bot holding a genuine verified identity still gets one entry, like everyone else.</li>
+</ul>
+<hr />
+<h2>4.7 Testing</h2>
+<table>
+<thead>
+<tr>
+<th>layer</th>
+<th>command</th>
+<th>covers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Go unit/integration</td>
+<td><code>./scripts/test.sh</code> (Go in Docker, Redis db15, PG <code>fairdrop_test</code>)</td>
+<td>auth, issuer (blind/plain, one-per-identity), entry (spend, idempotent), guard, lifecycle CAS, draw determinism, Merkle proofs, claim race + cascade, ledger chain tamper, integrity counters, kill/failure</td>
+</tr>
+<tr>
+<td>Crypto vectors</td>
+<td>part of the above (<code>fdcrypto_test.go</code>, writes <code>docs/test-vectors.json</code>)</td>
+<td>cross-language format</td>
+</tr>
+<tr>
+<td>Reference verifier</td>
+<td><code>python -m pytest verifier/test_verify.py</code></td>
+<td>Python recomputes root, proofs, ordering; detects dropped entry</td>
+</tr>
+<tr>
+<td>Scoring</td>
+<td><code>python -m pytest scoring/test_scoring.py</code></td>
+<td>bot advantage, cost per seat, counterfactual maths</td>
+</tr>
+<tr>
+<td>Attack engine</td>
+<td><code>docker exec fd-attack python -m pytest attack_engine/test_attack_engine.py</code> (needs <code>gevent</code>)</td>
+<td>profiles, operator/IP mapping, plan reproducibility, labels</td>
+</tr>
+<tr>
+<td>Browser crypto</td>
+<td><code>cd frontend &amp;&amp; npm test</code></td>
+<td>TS Merkle/verify identical to Go vectors, blind-sign round trip, detects a cheating bundle</td>
+</tr>
+<tr>
+<td>End to end</td>
+<td><code>python tests/smoke.py</code> against the running stack</td>
+<td>login → blind token → register → lock → reveal → draw → verify → claim → expiry cascade → integrity zero</td>
+</tr>
+<tr>
+<td>Protection self-test</td>
+<td><code>docker compose exec -T attack python -m attack_engine selftest</code></td>
+<td>18 known-good/known-bad requests, false-positive/false-negative check</td>
+</tr>
+<tr>
+<td>Experiments</td>
+<td><code>scripts/run_experiment.sh expN</code></td>
+<td>the seven PRD experiments, reports under <code>reports/</code></td>
+</tr>
+</tbody>
+</table>
+<p>Rules we follow: no mocks for Redis/Postgres (real services in Docker); bots must retry like real ones; if Fair Drop does worse than expected the run is reported, then fixed and rerun.</p>
+<hr />
+<h2>4.8 Demo Runbook</h2>
+<p>Prereq: <code>scripts/start.sh</code> (or <code>.ps1</code>), <code>scripts/seed.sh</code> once. Open <code>http://localhost:8088</code>, admin at <code>/admin</code> (<code>admin</code> / <code>admin-demo-pass</code>), Grafana <code>http://localhost:3001</code> (anonymous viewer). Test key: <code>test-key-demo</code>.</p>
+<p><strong>Quick path (the best 4 minutes):</strong> open <code>/admin</code> → <strong>Control Room</strong>.
+1. <em>Start bot attack</em> (pick a crowd size). Blue dots are people, orange dots are bots. At the gate each turns green (in), red (turned away, with the reason popped up) or purple (decoy trap).
+2. Scroll to <strong>How it works</strong>: the 6 steps a real person goes through, and the 7 rules with live "stopped" counts and which bot types each rule caught.
+3. <strong>The bots</strong> table: each bot type, what it tried, what it got versus what we expected (✔ as expected).
+4. <strong>Is protection right?</strong> scorecard: an independent judge re-checked every decision (people wrongly stopped should be 0).
+5. <strong>Old way vs new way</strong> bars: the same crowd under first-come-first-served.
+6. Open <strong>Bot Lab</strong>, pick your own mix of bots (or a preset such as <em>Heavy attack</em>), <em>Run this test</em>.
+7. <strong>Try to break it</strong>: the red-team tricks and which ones held.
+Also <code>/story</code> has a 3D scroll explanation.</p>
+<p><strong>0:00 FCFS under attack.</strong> Admin → Test tools → <em>Run an experiment</em>: <code>exp2</code>, scale 0.1, tick <em>also run live FCFS</em>. Open <code>reports/exp2_proxy_flood/summary.md</code>: in the live FCFS row bots (4% of identities) took ~20% of seats (advantage ≈ 5×). Show <code>live_fcfs</code> sold-out within seconds.</p>
+<p><strong>1:00 Same traffic, Fair Drop.</strong> Same table: Fair Drop row ≈ 1× (bots hold their identity share), human win rate comparable or better than FCFS and naive lottery. <em>Counterfactual</em> = same recorded attempts, three policies. Show the Fairness tab (Detailed results) chart.</p>
+<p><strong>2:00 Cryptographic proof.</strong> Open an event page → <em>Enter</em> → status page shows receipt + Merkle proof; <code>/verify</code> goes green after lock; run the reference verifier: <code>python verifier/verify.py --url http://localhost:8088/api --drop &lt;id&gt; --receipt &lt;receipt&gt;</code>. Show Admin → Audit → <strong>Verify chain</strong> (green), then <em>edit a stored event</em> → red at the exact event, <em>repair</em>.</p>
+<p><strong>3:00 Kill a replica.</strong> Run exp6 or <code>scripts/kill_replica.sh 2</code> while Live monitor is open: replica goes DOWN, traffic continues via failover, comes back, integrity panel stays all zero.</p>
+<p><strong>3:30 Malicious server.</strong> Test tools → Malicious demo (or <code>scripts/run_malicious_demo.sh</code>): server drops one entry at lock. Open that fan's verify page: <strong>red banner</strong>, proof fails; Admin → Audit shows <code>missing_receipts &gt; 0</code>.</p>
+<p>Reset between runs: Test tools → <em>Reset selected drop</em> (keeps users) or <code>scripts/reset.sh</code> (wipes everything).</p>
+<hr />
+<h2>4.9 System Analysis</h2>
+<h4>Problem</h4>
+<p>500 seats (Gold 100 / Silver 150 / General 250), ~50,000 would-be buyers. Under first-come-first-served the winners are whoever has the fastest connection, the most requests, the most IPs: bots. We want: <strong>one verified identity, one entry; the entry list publicly locked before randomness is revealed; anyone can recompute the draw; speed, request volume and IP rotation confer no advantage.</strong></p>
+<h4>Actors and threats</h4>
+<table>
+<thead>
+<tr>
+<th>actor</th>
+<th>goal</th>
+<th>what we do about it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Fan (human)</td>
+<td>get a seat fairly</td>
+<td>UI walks them through sign-in → blind token → entry → proof → claim; verify page recomputes everything</td>
+</tr>
+<tr>
+<td>Bot operator</td>
+<td>many seats</td>
+<td>cannot win by speed/volume/IP (draw ignores them); can only add <em>identities</em>, which costs money (Sybil experiment, cost per seat)</td>
+</tr>
+<tr>
+<td>Malicious server/admin</td>
+<td>favour someone, drop someone</td>
+<td>commit–reveal seed + drand, Merkle root before reveal, audit chain, per-fan verification; admin only advances phases, cannot choose winners</td>
+</tr>
+<tr>
+<td>Flooder</td>
+<td>take the site down</td>
+<td>rate limits (availability only), decoy tarpit, stateless replicas behind failover</td>
+</tr>
+</tbody>
+</table>
+<h4>Non-goals (not claimed)</h4>
+<p>Stopping people from holding several real verified identities; stopping all bots; protecting a compromised identity provider; real SMS/payment (OTP is simulated; ticket price is shown but no money moves).</p>
+<h4>Requirements → where implemented</h4>
+<table>
+<thead>
+<tr>
+<th>requirement</th>
+<th>implementation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Verified identity once, eligibility cutoff</td>
+<td><code>auth.go</code>, <code>verified_at ≤ cutoff</code> check in issuer</td>
+</tr>
+<tr>
+<td>One entry per identity, unlinkable</td>
+<td>RFC 9474 blind sign + Lua spent set (<code>entry.go</code>, <code>fdcrypto</code>)</td>
+</tr>
+<tr>
+<td>No session at register</td>
+<td><code>/register</code> takes only the token</td>
+</tr>
+<tr>
+<td>Public lock + commit–reveal</td>
+<td>Merkle root at LOCKED, <code>seed_hash</code> at creation, optional drand</td>
+</tr>
+<tr>
+<td>Anyone can recompute</td>
+<td><code>/verify</code> bundle, browser verify page, <code>verifier/verify.py</code></td>
+</tr>
+<tr>
+<td>Fair under attack</td>
+<td>draw over unique receipts; 8 bot profiles; counterfactual engine</td>
+</tr>
+<tr>
+<td>Claims with timeout + waitlist</td>
+<td><code>claim.go</code> Lua + <code>elig</code>/<code>wlptr</code></td>
+</tr>
+<tr>
+<td>Tamper evidence</td>
+<td>hash-chained <code>audit_log</code>, integrity counters, red warnings</td>
+</tr>
+<tr>
+<td>Survive replica loss</td>
+<td>stateless API, idempotent calls, nginx failover, compose restart</td>
+</tr>
+<tr>
+<td>Observability</td>
+<td>Prometheus + Grafana, SSE live monitor</td>
+</tr>
+<tr>
+<td>Testability</td>
+<td>TEST_MODE endpoints, label file, resettable seeded experiments</td>
+</tr>
+</tbody>
+</table>
+<h4>Deviations from the PRD (with reasons)</h4>
+<ol>
+<li><strong>Tier is part of the Merkle leaf</strong>: stops post-lock tier swaps (ADR-6).</li>
+<li><strong>State transitions can be triggered by timer or admin through the same CAS</strong>: robust to worker loss (ADR-12).</li>
+<li><strong>UI_MIMIC replays the UI request sequence, not a real browser</strong>: 50k Playwright sessions don't fit one machine (ADR-10).</li>
+<li><strong>drand BLS signature is not verified by our code</strong>: we pin the correct round and use its randomness; any drand client can verify the signature.</li>
+<li><strong>"Attempts" for counterfactuals exclude rate-limited and post-close requests</strong>: they never reach allocation; including them would blur the comparison.</li>
+<li><strong>Gateway on port 8088</strong> (8080 was busy on the dev machine); configurable with <code>GATEWAY_PORT</code>.</li>
+<li><strong>Plain-token fallback</strong> is implemented behind the same endpoint (PRD-permitted); it is linkable by the server.</li>
+<li><strong>Bulk load uses the TEST_MODE <code>/drops/{id}/test-token</code> endpoint</strong> (PRD-specified) instead of client-side blinding for each of 50,000 Python actors. <code>/register</code> still verifies the signature and spends the token exactly as in production. The real blind-signature flow (browser library ↔ Go server) is covered by <code>tests/smoke.py</code>, the Go tests and the frontend unit test.</li>
+<li><strong>Experiment 4 uses 10 seats and 21 identities</strong> (5 bot operators × 4 identities with ~50,000 bot requests, plus one human) so that "one human among a flood" has a meaningful chance to measure; its ideal human win rate is 10/21 ≈ 0.48.</li>
+</ol>
+<hr />
+<h2>4.10 Research</h2>
+<p>Sources are the standards and prior art that shaped the design; decisions are in <code>ARCHITECTURE_DECISIONS.md</code>.</p>
+<ol>
+<li><strong>RFC 9474, RSA Blind Signatures</strong> (IETF). Defines <code>RSABSSA</code> variants; we use SHA-384, PSS, <em>deterministic</em> (no salt) so a retried blind-sign request yields the same signature. Unlinkability holds because the signer sees only the blinded message. Takeaway: tokens are single-use only if the <em>verifier</em> keeps a spent set, so Redis <code>SADD</code> is part of the design.</li>
+<li><strong>Privacy Pass (RFC 9576–9578)</strong>. Same idea (issue once, redeem unlinkably) used by CDNs for anti-abuse. Confirms the two-endpoint shape (issue authenticated, redeem anonymous). We do not use its protocol framing; the drop-scoped key and a 1-per-identity issue rule are what Fair Drop needs.</li>
+<li><strong>drand</strong> (League of Entropy; quicknet chain, 3 s rounds, BLS threshold signatures). Verifiable public randomness that nobody (including the operator) can predict before the round. We pick a round strictly after the lock time and mix its randomness. Limitation: we do not verify the BLS signature in our own code; clients can with any drand library.</li>
+<li><strong>Certificate Transparency / RFC 6962 Merkle trees.</strong> Domain-separated leaf/node hashing prevents second-preimage attacks on the tree (<code>0x00</code>/<code>0x01</code> prefixes). We do not need consistency proofs (a single locked tree per drop), only inclusion proofs.</li>
+<li><strong>Commit–reveal.</strong> Standard; weakness is grinding by the committer, which is why ADR-5 adds the beacon.</li>
+<li><strong>Ticketing bot economics.</strong> Public reporting on the US BOTS Act and ticket-queue lotteries (verified-fan style programmes): FCFS rewards bandwidth; lotteries shift the attack to account creation. That motivated measuring <em>cost per seat</em> and the Sybil-scaling experiment rather than claiming bots are stopped.</li>
+<li><strong>Redis for atomic admission</strong>: Lua scripts are atomic and <code>TIME</code> inside a script is the single clock; Streams + consumer groups give an at-least-once feed to Postgres. The ledger writer is idempotent on <code>seq</code>.</li>
+<li><strong>Locust</strong>: <code>FastHttpUser</code> (geventhttpclient) handles thousands of concurrent users per process; <code>--processes</code> forks workers on one machine. We bypass its default "N identical users" model with an actor queue so identities, arrival times and IPs follow a plan.</li>
+<li><strong>Counterfactual evaluation</strong>: to compare policies fairly one must replay the <em>same</em> arrival stream through each policy (not run separate experiments with different randomness). Expectation over re-draws removes lucky/unlucky single-draw noise.</li>
+</ol>
+<hr />
+<h2>4.11 Architecture Decisions</h2>
+<p>Format: options → tradeoffs → choice → reason.</p>
+<p><strong>ADR-1 Allocation: FCFS vs naive lottery vs identity-capped lottery.</strong> FCFS rewards speed and volume (bots win). A naive lottery over <em>requests</em> rewards volume (more requests = more tickets). <em>Choice:</em> lottery over <strong>accepted unique receipts</strong>, one receipt per verified identity per drop. Bots get no advantage per identity; the only lever left is buying identities, which has an explicit cost we measure.</p>
+<p><strong>ADR-2 Keeping identity out of the entry: blind signatures vs a server-side ID check vs zero-knowledge proofs.</strong> Server-side check is simplest but lets the server link entries to people (and bias). ZK identity needs heavy tooling for a 1-person-1-entry check. <em>Choice:</em> RFC 9474 blind RSA (standardised, small libs in Go and the browser). Fallback <code>plain</code> mode behind the same <code>/register</code> contract if blinding misbehaves.</p>
+<p><strong>ADR-3 Uniqueness: Redis Lua vs Postgres transactions.</strong> PG rows give strong guarantees but 50k users within seconds hit a hot-row/connection wall. <em>Choice:</em> atomic Lua in Redis on the hot path, Postgres unique constraints as the independent audit. Both must agree (integrity counters).</p>
+<p><strong>ADR-4 Clock: wall clocks vs Redis TIME.</strong> Replica clock skew would let a replica accept entries late. <em>Choice:</em> Redis <code>TIME</code> in every Lua script, one clock.</p>
+<p><strong>ADR-5 Public randomness: committed seed only vs seed + drand.</strong> A committed seed alone lets the operator grind seeds before publishing the hash. Adding a beacon from a round that did not exist at lock time removes that. <em>Choice:</em> both, drand optional (<code>DRAND_ENABLED</code>), with <code>DrandRoundAfter</code> pinning the round.</p>
+<p><strong>ADR-6 Merkle leaf binds tier.</strong> Without it a malicious server could move a winner between tiers after the lock. <em>Deviation from the PRD sketch, which listed receipt only.</em> Cost: none.</p>
+<p><strong>ADR-7 Seat = draw rank.</strong> Ranks fill tiers in order of score; waitlist is the remainder. Timing of claim never changes rank. Cascade on expiry is deterministic (<code>elig</code> ZSET + <code>wlptr</code>).</p>
+<p><strong>ADR-8 Counterfactuals on the same attempts.</strong> The attempts stream records every accepted/rejected request with evaluation-only actor labels. FCFS = arrival order; naive lottery = every request is a ticket; Fair Drop = the real result; each with a per-account cap of 4. Naive and Fair Drop expectations are averaged over 200 re-draws so one lucky draw is not mistaken for an advantage.</p>
+<p><strong>ADR-9 Load generator: Locust actor queue.</strong> Each Locust "user" pulls the next actor from a time-ordered plan (partitioned per worker process), so thousands of identities are scheduled with the arrival pattern we choose rather than N parallel loops. Realistic bots (retries, backoff, IP rotation) live in <code>profiles.py</code>.</p>
+<p><strong>ADR-10 UI_MIMIC without a real browser.</strong> Playwright at 50k actors is out of budget on one machine. <em>Deviation:</em> UI_MIMIC replays the sequence the UI would make (page loads, think time, the same blind-sign flow) over HTTP. It does not execute JS.</p>
+<p><strong>ADR-11 Rate limits.</strong> Used only so the service stays up; the experiments run with the guard enabled and the draw does not read it. Claims about bots are limited to "no allocation advantage per request or per IP", never "bots are impossible".</p>
+<p><strong>ADR-12 State machine permits transitions from any process.</strong> Timers (worker) and manual admin advance race through the same Redis CAS. <em>Deviation:</em> the PRD implied a single orchestrator; this is more robust to the worker dying.</p>
+<p><strong>ADR-13 Frontend: Next.js 16, Tailwind 4, hand-written shadcn-style primitives, recharts, @noble/hashes.</strong> <code>crypto.subtle</code> is unavailable on plain-http origins, so hashing uses <code>@noble/hashes</code> in the browser verifier.</p>
+<hr />
+<h2>4.12 Api Contract</h2>
+<p>All paths are served by nginx under <code>/api</code> (<code>http://localhost:8088/api/...</code>). JSON in/out. Errors are <code>{"error": "&lt;code&gt;", "detail": "..."}</code> with a matching HTTP status. <code>Authorization: Bearer &lt;JWT&gt;</code> for fan (<code>role=user</code>) and admin (<code>role=admin</code>) endpoints. The SSE stream also accepts <code>?access_token=</code> because <code>EventSource</code> cannot set headers.</p>
+<h4>Auth</h4>
+<table>
+<thead>
+<tr>
+<th>Method &amp; path</th>
+<th>Body</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>POST /auth/otp</code></td>
+<td><code>{phone}</code></td>
+<td>Simulated OTP. In dev the code is returned (<code>dev_code</code>) and <strong>no SMS is sent</strong></td>
+</tr>
+<tr>
+<td><code>POST /auth/verify</code></td>
+<td><code>{phone, code}</code></td>
+<td><code>{token, user_id, verified_at}</code>. The identity is verified once, at that time</td>
+</tr>
+<tr>
+<td><code>POST /admin/login</code></td>
+<td><code>{username, password}</code></td>
+<td><code>{token}</code> (role <code>admin</code>)</td>
+</tr>
+</tbody>
+</table>
+<h4>Public drop info</h4>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /drops</code>, <code>GET /drops/{id}</code></td>
+<td>State, tiers, window, cutoff, <code>seed_hash</code> (published at creation), RSA <code>public_key</code> (JWK/SPKI), <code>token_mode</code>, and once locked the <code>merkle_root</code> + <code>entry_count</code>; after reveal the <code>seed</code> and beacon</td>
+</tr>
+<tr>
+<td><code>GET /drops/{id}/proof/{receipt}</code></td>
+<td>Merkle inclusion proof for one receipt (after LOCKED)</td>
+</tr>
+<tr>
+<td><code>GET /drops/{id}/result/{receipt}</code></td>
+<td>Rank, win/lose, tier, seat, ECDSA-signed receipt (after DRAWN)</td>
+</tr>
+<tr>
+<td><code>GET /drops/{id}/verify</code></td>
+<td>Everything needed to recompute the draw offline: sorted <code>(receipt, tier)</code> list, root, seed, beacon, ordering. Same bundle the browser verifier and <code>verifier/verify.py</code> consume</td>
+</tr>
+<tr>
+<td><code>GET /drops/{id}/seats</code></td>
+<td>Seat map with claim state</td>
+</tr>
+<tr>
+<td><code>GET /healthz</code>, <code>GET /metrics</code></td>
+<td>Liveness (also pings Redis) and Prometheus</td>
+</tr>
+</tbody>
+</table>
+<h4>Entry (the two-step, unlinkable flow)</h4>
+<ol>
+<li><code>POST /drops/{id}/token</code> (<strong>authenticated</strong>): <code>{blinded_msg}</code> (RFC 9474 blinded message; or <code>{token_secret}</code> in plain mode). Returns <code>{blind_sig}</code>. Exactly one per verified identity per drop (<code>409 already_issued</code>; idempotent replay of the <em>same</em> request returns the same signature). <code>403 ineligible</code> if verified after the cutoff. <code>409 closed</code> outside OPEN.</li>
+<li><code>POST /drops/{id}/register</code> (<strong>no session, no cookie, no user id</strong>): <code>{token_secret, signature, tier}</code>. The server verifies the signature against the drop key, atomically spends the token in Redis (one-time) and returns <code>{receipt_id, receipt_sig}</code> where <code>receipt_id = H(token_secret)</code>. Replaying the same token returns the same receipt (idempotent); using it for a different tier is rejected (<code>409</code>).</li>
+<li><code>POST /drops/{id}/register-fast</code>: decoy (tarpit). Looks like a faster path to entry, does nothing for allocation, and counts as a tarpit hit.</li>
+</ol>
+<p>The server cannot link a receipt to an account: it signed a blinded value.</p>
+<h4>Lifecycle (admin)</h4>
+<p><code>POST /admin/drops/{id}/advance {"to": "OPEN|CLOSED|LOCKED|DRAWN|CLAIM|SETTLED"}</code>: compare-and-set in Redis; illegal transition = <code>409 {state, allowed}</code>. Timers (worker) advance automatically when <code>auto_draw</code> is on. <code>SCHEDULED→OPEN→CLOSED→LOCKED→DRAWN→CLAIM→SETTLED</code>; <code>fcfs</code> drops use <code>SCHEDULED→OPEN→CLOSED→SETTLED</code>.</p>
+<p><code>POST /admin/events {name, venue, starts_at, tiers:[{name, price_cents, seats}]}</code> · <code>POST /admin/drops {event_id, mode: fairdrop|fcfs, opens_at, closes_at, cutoff_at, claim_sec, auto_draw}</code> (generates the seed + <code>seed_hash</code>, the per-drop RSA/EC keys).</p>
+<h4>Claims</h4>
+<p><code>POST /drops/{id}/claim {receipt_id, ...}</code> (authenticated winner): claims the seat within the claim window; expired or declined seats cascade to the next waitlist rank. <code>GET /me/tickets</code> returns tickets with the ECDSA ticket signature (QR payload).</p>
+<h4>FCFS baseline</h4>
+<p><code>POST /baseline/{id}/buy</code> (authenticated): classic first-come-first-served; <code>GET /baseline/{id}/status</code> public sold-out status.</p>
+<h4>Admin read APIs</h4>
+<p><code>GET /admin/{events,drops}</code>, <code>/admin/drops/{id}/live</code> (SSE), <code>/admin/drops/{id}/feed?after=&lt;id&gt;</code> (sampled stream of accept/reject decisions with who/why, plus exact 3-second rates), <code>/admin/drops/{id}/protection</code> (confusion matrix + per-reason audit + per-bot-type breakdown <code>by_profile</code>, see FAIRNESS_METRICS), <code>/admin/drops/{id}/pulse</code> (the Control Room in one call: tickets sold/left, requests in flight, database writes waiting, typical/slow/slowest wait, 5xx count, server list, Redis and Postgres stats), <code>/counterfactuals</code>, <code>/audit?limit=&amp;verify=1</code> (hash-chain verification), <code>/integrity</code> (six violation counters), <code>/claims</code>, <code>/baseline</code>, <code>/admin/experiments[/{id}]</code>, <code>/admin/config</code>.</p>
+<h4>TEST_MODE only (<code>X-Test-Key</code>, 404 otherwise)</h4>
+<p><code>POST /test/seed {count}</code> · <code>POST /test/login {user_id}</code> (JWT without OTP) · <code>POST /drops/{id}/test-token</code> (a plain token for a test user) · <code>POST /test/reset {drop_id, state, window_sec, claim_sec}</code> · <code>POST|GET /test/labels</code> · <code>POST /test/malicious {drop_id, enabled, receipt_id|user_id}</code> · <code>POST /test/config {guard:{enabled, ip_limit, acct_limit}}</code> · <code>POST /test/experiments</code> (attack engine pushes results) · <code>POST /test/die</code> (replica <code>exit 137</code>) · <code>POST /test/tamper-audit {repair}</code> · <code>POST /test/admin-token</code>.</p>
+<p><code>X-Sim-IP</code> (TEST_MODE only) overrides the client IP so one machine can simulate thousands of addresses. <code>X-Sim-Actor</code> carries evaluation-only identity for the attempts stream; <strong>allocation never reads it</strong>.</p>
+<h4>Status codes you will see</h4>
+<p><code>200</code> ok · <code>400 bad_request</code> · <code>401</code> unauthenticated · <code>403 ineligible|forbidden</code> · <code>404</code> · <code>409 already_issued|closed|token_spent|illegal_transition</code> · <code>429 rate_limited</code> (availability only; never changes who wins) · <code>503</code> redis down / draining.</p>
+<h4>Attack-engine control API (via nginx <code>/attack/…</code>, X-Test-Key)</h4>
+<p><code>POST /run {experiment, scale, also_fcfs}</code> (experiment = <code>exp1</code>..<code>exp7</code> or <code>show</code>, the live-show crowd with every bot type) · <code>GET /runs</code>, <code>GET /runs/{id}</code> · <code>POST /selftest</code> (18 known-good / known-bad requests against a fresh drop; returns <code>{cases:[{name,tried,expected,actual,pass}], passed, total}</code>).
+<code>POST /redteam</code> (14 attacker tricks against the live system; returns <code>{probes:[{id,title,goal,move,expected,result,verdict:held|BROKEN|demo-only|info}], held, broken}</code>), <code>GET /redteam/last</code>, <code>GET /redteam/before</code> (the first run, before the fixes, from <code>reports/redteam/before_fix.json</code>).</p>
+<h4>Limits added by the red team</h4>
+<p><code>/auth/otp</code>: max 3 codes per phone per 10 min (<code>429 otp_rate_limited</code>); the phone is reduced to digits first (one SIM = one identity). <code>/auth/verify</code>: 5 wrong guesses destroy the code (<code>429 too_many_attempts</code>). <code>/admin/login</code>: 5 wrong passwords per address lock it for 5 min (<code>429 locked</code>). Request bodies: 64 KB (gateway and server), except <code>/api/test/*</code> bulk uploads. A retry key (<code>Idempotency-Key</code>) is scoped to its own ticket.</p>
+<hr />
+<h2>4.13 Dependencies</h2>
+<table>
+<thead>
+<tr>
+<th>area</th>
+<th>library</th>
+<th>why</th>
+<th>alternative rejected</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Go</td>
+<td><code>go-chi/chi</code> v5</td>
+<td>tiny router, std <code>net/http</code> handlers</td>
+<td>gin/fiber: bigger, non-std context</td>
+</tr>
+<tr>
+<td>Go</td>
+<td><code>redis/go-redis</code> v9</td>
+<td>Lua <code>EvalSha</code>, Streams, consumer groups</td>
+<td>redigo: no pipelining ergonomics</td>
+</tr>
+<tr>
+<td>Go</td>
+<td><code>golang-jwt/jwt</code> v5</td>
+<td>HS256 sessions</td>
+<td>hand-rolled JWT: security risk</td>
+</tr>
+<tr>
+<td>Go</td>
+<td><code>jackc/pgx</code> v5</td>
+<td>pool + batch inserts for the ledger</td>
+<td><code>database/sql</code>+lib/pq: slower, unmaintained</td>
+</tr>
+<tr>
+<td>Go</td>
+<td><code>cloudflare/circl</code> (blindsign/blindrsa)</td>
+<td>RFC 9474 implementation, needs Go ≥ 1.25</td>
+<td>writing RSA blinding ourselves</td>
+</tr>
+<tr>
+<td>Go</td>
+<td><code>prometheus/client_golang</code></td>
+<td><code>/metrics</code></td>
+<td>custom exposition</td>
+</tr>
+<tr>
+<td>Infra</td>
+<td>Redis 7, Postgres 16, Nginx, Prometheus, Grafana</td>
+<td>state, record, gateway/failover, metrics, dashboards</td>
+<td></td>
+</tr>
+<tr>
+<td>Attack</td>
+<td><code>locust</code>, <code>gevent</code></td>
+<td>the required load engine; FastHttpUser scales to 2,000 users/process</td>
+<td>k6 (not Python, harder to model actors)</td>
+</tr>
+<tr>
+<td>Attack</td>
+<td><code>requests</code>, <code>numpy</code>, <code>matplotlib</code></td>
+<td>control calls, scoring math, report charts</td>
+<td>pandas (unneeded)</td>
+</tr>
+<tr>
+<td>Web</td>
+<td>Next.js 16 (App Router), React 19, Tailwind 4</td>
+<td>fan + admin UI</td>
+<td>CRA/Vite: no routing/SSR bundle story</td>
+</tr>
+<tr>
+<td>Web</td>
+<td><code>@cloudflare/blindrsa-ts</code></td>
+<td>browser side of RFC 9474, interoperates with circl (tested against the live stack)</td>
+<td></td>
+</tr>
+<tr>
+<td>Web</td>
+<td><code>@noble/hashes</code></td>
+<td>SHA-256 without <code>crypto.subtle</code> (unavailable on plain http)</td>
+<td><code>crypto.subtle</code></td>
+</tr>
+<tr>
+<td>Web</td>
+<td><code>recharts</code>, <code>qrcode</code>, <code>class-variance-authority</code>, <code>clsx</code>, <code>tailwind-merge</code>, <code>lucide-react</code></td>
+<td>charts, ticket QR, UI primitives</td>
+<td>full shadcn CLI (hand-written primitives are ~100 lines)</td>
+</tr>
+<tr>
+<td>Test</td>
+<td>Go <code>testing</code>, <code>pytest</code>, <code>vitest</code></td>
+<td>per-language unit/e2e</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>Versions are pinned by <code>backend/go.sum</code>, <code>frontend/package-lock.json</code>, and <code>attack_engine/requirements.txt</code>.</p>
+<hr />
+<h2>4.14 README and headline results</h2>
+<p>Sell <strong>500 seats to 50,000 people</strong> where speed, request volume and IP rotation give <strong>no advantage</strong>: one verified identity gets one entry, the entry list is publicly locked (Merkle root) <em>before</em> the seed is revealed, and anyone can recompute the draw.</p>
+<blockquote>
+<p>We do <strong>not</strong> claim bots are impossible. We claim a bot gets nothing from speed, volume or IPs, and that every extra seat costs it a real verified identity. The experiments below measure exactly that.</p>
+</blockquote>
+<h4>Run it</h4>
+<pre><code class="language-bash">scripts/start.sh            # or scripts\start.ps1  (docker compose up -d --build)
+scripts/seed.sh             # 50,000 synthetic verified users (TEST_MODE, no phones/SMS)
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>what</th>
+<th>where</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>fan site + admin</td>
+<td>http://localhost:8088 · admin <code>/admin</code> (<code>admin</code> / <code>admin-demo-pass</code>)</td>
+</tr>
+<tr>
+<td>API</td>
+<td>http://localhost:8088/api</td>
+</tr>
+<tr>
+<td>Grafana (dashboard "Fair Drop")</td>
+<td>http://localhost:3001</td>
+</tr>
+<tr>
+<td>Prometheus</td>
+<td>http://localhost:9090</td>
+</tr>
+<tr>
+<td>attack engine control API</td>
+<td>http://localhost:9200</td>
+</tr>
+</tbody>
+</table>
+<p>Services: 3 Go API replicas, a worker, Redis, Postgres, Nginx, Prometheus, Grafana, Next.js frontend, Locust attack engine. Test key <code>test-key-demo</code> (TEST_MODE only).</p>
+<p>Experiments:</p>
+<pre><code class="language-bash">scripts/run_experiment.sh exp2 --scale 0.1 --also-fcfs     # one experiment (exp1..exp7)
+scripts/run_all_experiments.sh --scale 1.0 --also-fcfs      # all seven, 50,000 identities
+scripts/kill_replica.sh 2      scripts/run_malicious_demo.sh      scripts/reset.sh
+</code></pre>
+<p>Windows equivalents: <code>scripts\*.ps1</code>. Tests: what each one means in plain English is in <a href="docs/TESTS_EXPLAINED.md">docs/TESTS_EXPLAINED.md</a>; commands in <a href="docs/TESTING.md">docs/TESTING.md</a>.</p>
+<h4>Where to look (no jargon)</h4>
+<ul>
+<li><strong><code>/story</code></strong>: a scroll-driven 3D explanation (people, bots, the old way, the sealed list, the draw).</li>
+<li><strong>Admin → Control Room</strong> (default tab): start a bot attack with one button; watch each decision as a dot (green accepted, red rejected, purple decoy trap; circle = person, diamond = bot); live users, requests/s, accepted/s, rejected/s; people vs bots let in; a <strong>protection scorecard</strong> (correctly blocked / false negatives / false positives / correctly allowed, with every rejection reason re-checked by an independent oracle); <strong>BEFORE (first-come-first-served) vs AFTER (Fair Drop)</strong> bars; and a <strong>protection self-test</strong> of 18 known-good/known-bad requests.</li>
+<li>Admin → Summary: the same facts in plain sentences.</li>
+</ul>
+<h4>Results (full scale, one laptop, rate limits on, live FCFS replay of the same actors)</h4>
+<p>Raw data: <code>reports/&lt;experiment&gt;/{results.json,results.csv,summary.md,charts/}</code>.</p>
+<table>
+<thead>
+<tr>
+<th>experiment</th>
+<th>FCFS</th>
+<th>naive lottery</th>
+<th><strong>Fair Drop</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>2 Proxy flood</strong>: 20 operators × 10 identities, rotating IPs (bots = 0.4% of identities)</td>
+<td>bots hold <strong>20%</strong> of seats, advantage <strong>50×</strong>; human win rate 0.8%</td>
+<td>14.1% of seats, <strong>35×</strong></td>
+<td><strong>0.4%</strong> of seats, advantage <strong>0.95×</strong>; human win rate 1.0%</td>
+</tr>
+<tr>
+<td><strong>4 One human vs ~50,000 bot requests</strong> (10 seats, 21 identities)</td>
+<td>human wins <strong>0%</strong></td>
+<td>0%</td>
+<td>human wins <strong>46.5%</strong> in expectation (ideal 47.6%)</td>
+</tr>
+<tr>
+<td><strong>5 Tarpit</strong>: API scrapers + UI mimics (10.6% of identities)</td>
+<td>advantage 1.9×</td>
+<td>0.70×</td>
+<td><strong>0.52×</strong></td>
+</tr>
+<tr>
+<td><strong>1 Normal traffic</strong>: 50,000 humans</td>
+<td>1.0% win</td>
+<td>1.0%</td>
+<td>1.0%, 0 errors, p99 register 44 ms</td>
+</tr>
+</tbody>
+</table>
+<p><strong>3 Sybil scaling</strong> (what buying identities does): Fair Drop seats and cost per seat for a bot operator</p>
+<table>
+<thead>
+<tr>
+<th>identities bought</th>
+<th>FCFS seats / cost per seat</th>
+<th>Fair Drop seats (expected) / cost per seat</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>100</td>
+<td>100 / $3</td>
+<td><strong>1.0 / $293</strong></td>
+</tr>
+<tr>
+<td>1,000</td>
+<td>100 / $30</td>
+<td>8.8 / $341</td>
+</tr>
+<tr>
+<td>10,000</td>
+<td>100 / $300</td>
+<td><strong>55.5 / $541</strong></td>
+</tr>
+</tbody>
+</table>
+<p><em>Honest reading:</em> Fair Drop cannot stop a buyer who owns 10,000 verified identities from winning ≈11% of all seats. It makes each seat cost ~$300-$540 of identities (at an assumed $3/identity, configurable) instead of ~$3, and removes every speed/volume/IP lever. Identity cost is the control, not cryptography.</p>
+<p><strong>6 Kill a replica mid-window</strong> (20,000 humans, <code>api-2</code> exit 137): 20,000 client-acked receipts, <strong>0 missing from the Merkle tree</strong>, 0 client 5xx/connection errors, replica back healthy, all six integrity counters 0, audit chain valid, Python verifier passes.
+<strong>7 Malicious server drops one entry</strong>: victim's proof returns 404 → verify page shows <strong>red</strong> "your receipt is NOT in the locked list"; independent audit log shows <code>missing_receipts = 1</code>; the reference verifier flags it; a control receipt still verifies.</p>
+<h4>How it works (one paragraph)</h4>
+<p>Verified fans get <strong>one blind-signed token per drop</strong> (RFC 9474) and later register with it <strong>with no session</strong>, so the server can't link entry to person. Registration is atomic in Redis (spent set); at close the entry list is Merkle-locked and the root published; then the committed seed (and an optional drand beacon chosen after lock) is revealed and <code>score = H(final ‖ receipt)</code>; lowest scores win seats, the rest form the waitlist; unclaimed seats cascade down it. Every event goes into a hash-chained audit log. See <a href="docs/CRYPTOGRAPHY.md">docs/CRYPTOGRAPHY.md</a>.</p>
+<h4>Docs</h4>
+<p><a href="docs/SYSTEM_ANALYSIS.md">SYSTEM_ANALYSIS</a> (incl. PRD deviations) · <a href="docs/ARCHITECTURE.md">ARCHITECTURE</a> · <a href="docs/ARCHITECTURE_DECISIONS.md">ARCHITECTURE_DECISIONS</a> · <a href="docs/RESEARCH.md">RESEARCH</a> · <a href="docs/API_CONTRACT.md">API_CONTRACT</a> · <a href="docs/CRYPTOGRAPHY.md">CRYPTOGRAPHY</a> · <a href="docs/ATTACK_ENGINE.md">ATTACK_ENGINE</a> · <a href="docs/FAIRNESS_METRICS.md">FAIRNESS_METRICS</a> · <a href="docs/TESTS_EXPLAINED.md">TESTS_EXPLAINED</a> · <a href="docs/RED_TEAM.md">RED_TEAM</a> · <a href="docs/TESTING.md">TESTING</a> · <a href="docs/DEMO_RUNBOOK.md">DEMO_RUNBOOK</a> · <a href="docs/DEPENDENCIES.md">DEPENDENCIES</a></p>
+<h4>Layout</h4>
+<p><code>backend/</code> Go API + worker · <code>frontend/</code> Next.js fan + admin UI · <code>attack_engine/</code> Locust profiles, scenarios, reporting · <code>scoring/</code> fairness maths · <code>verifier/</code> stdlib Python verifier · <code>infra/</code> nginx, Prometheus, Grafana · <code>scripts/</code> · <code>tests/</code> e2e · <code>reports/</code> experiment output · <code>docs/</code>.</p>
+<hr />
+<h1>Part 5: Honest limits</h1>
+<ul>
+<li><strong>Identity farm</strong>: an owner of many genuinely verified accounts gets one entry per account. Nothing in the entry flow can tell them from many people; cost per account is the only defence.</li>
+<li><strong>Oracle</strong>: the independent judge checks consistency with ground truth in the simulation, not real-world intent.</li>
+<li><strong>50,000 test</strong>: measured on one laptop (peak about 1,300 requests in flight, about 2,000 clicks per second). It is not proof of 50,000 simultaneous connections.</li>
+<li><strong>Demo secrets</strong>: published demo passwords and keys are for the demo only; the server refuses to start outside test mode with them.</li>
+<li><strong>Docker Desktop</strong>: with 1,500 hung connections held from the host, its port forwarder stalls; inside the Docker network the gateway copes. This is a laptop artefact.</li>
+<li><strong>Phone formats</strong>: national and international spellings of the same number can still differ without a phone library and default country.</li>
+<li><strong>After redeploying web servers</strong>, reload the gateway or one server takes all the load.</li>
+</ul>

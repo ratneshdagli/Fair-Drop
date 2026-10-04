@@ -1,0 +1,880 @@
+{
+ "meta": {
+  "experiment": "exp4_one_human",
+  "tag": "",
+  "scenario": {
+   "name": "exp4_one_human",
+   "description": "Experiment 4 - the 1-human scenario: ~50,000 bot requests from 5 operators with 4 identities each, plus ONE human, 10 seats.",
+   "policy": "fairdrop",
+   "humans": 1,
+   "operators": [
+    {
+     "id": "flood-a",
+     "profile": "FLOOD_BOT",
+     "identities": 4,
+     "ip_pool": 5,
+     "params": {
+      "requests": 2500
+     },
+     "start": "open"
+    },
+    {
+     "id": "flood-b",
+     "profile": "FLOOD_BOT",
+     "identities": 4,
+     "ip_pool": 5,
+     "params": {
+      "requests": 2500
+     },
+     "start": "open"
+    },
+    {
+     "id": "proxy-a",
+     "profile": "PROXY_ROTATOR",
+     "identities": 4,
+     "ip_pool": 3000,
+     "params": {
+      "requests": 2500
+     },
+     "start": "open"
+    },
+    {
+     "id": "proxy-b",
+     "profile": "PROXY_ROTATOR",
+     "identities": 4,
+     "ip_pool": 3000,
+     "params": {
+      "requests": 2500
+     },
+     "start": "open"
+    },
+    {
+     "id": "retry-a",
+     "profile": "RETRY_BOT",
+     "identities": 4,
+     "ip_pool": 100,
+     "params": {
+      "retries": 625
+     },
+     "start": "open"
+    }
+   ],
+   "tiers": [
+    {
+     "id": "gold",
+     "name": "Gold",
+     "price_cents": 25000,
+     "seats": 10
+    }
+   ],
+   "window_sec": 30,
+   "arrival": "uniform",
+   "concurrency": 600,
+   "processes": 2,
+   "seed": 7,
+   "identity_cost_usd": 3.0,
+   "kill_replica_at_s": null,
+   "malicious": false,
+   "claims": false,
+   "claim_sec": 20,
+   "human_claim_rate": 0.9,
+   "tag": ""
+  },
+  "started": "2026-10-03T16:56:06",
+  "duration_s": 32.1,
+  "drop_id": "exp-exp4_one_human-fairdrop-6b9d69",
+  "policy": "fairdrop",
+  "population": 50000,
+  "identity_cost_usd": 3.0,
+  "actors": 21,
+  "operators": 5
+ },
+ "traffic": {
+  "humans": 1,
+  "bot_identities": 20,
+  "operators": {
+   "flood-a": {
+    "profile": "FLOOD_BOT",
+    "ip_pool": 5
+   },
+   "flood-b": {
+    "profile": "FLOOD_BOT",
+    "ip_pool": 5
+   },
+   "proxy-a": {
+    "profile": "PROXY_ROTATOR",
+    "ip_pool": 3000
+   },
+   "proxy-b": {
+    "profile": "PROXY_ROTATOR",
+    "ip_pool": 3000
+   },
+   "retry-a": {
+    "profile": "RETRY_BOT",
+    "ip_pool": 100
+   }
+  },
+  "client_requests": 52077,
+  "client_events": {
+   "retry_429": 43
+  },
+  "receipts_issued_to_clients": 21,
+  "attempts_recorded": 29875,
+  "attempts_by_kind": {
+   "bot": 29874,
+   "human": 1
+  }
+ },
+ "latency": {
+  "POST /test/login": {
+   "requests": 21,
+   "p50_ms": 3.35,
+   "p95_ms": 5.59,
+   "p99_ms": 6.59,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 0,
+   "rps": 0.6546898343501459,
+   "status": {
+    "200": 21
+   }
+  },
+  "POST /drops/{id}/test-token": {
+   "requests": 8582,
+   "p50_ms": 1.68,
+   "p95_ms": 3.41,
+   "p99_ms": 4.35,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 8561,
+   "rps": 267.5499123044263,
+   "status": {
+    "200": 21,
+    "409": 8561
+   }
+  },
+  "POST /drops/{id}/register": {
+   "requests": 39513,
+   "p50_ms": 1.93,
+   "p95_ms": 3.59,
+   "p99_ms": 4.53,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 31992,
+   "rps": 1231.845686889396,
+   "status": {
+    "200": 7521,
+    "409": 22354,
+    "429": 9638
+   }
+  },
+  "GET /drops/{id}": {
+   "requests": 3961,
+   "p50_ms": 1.84,
+   "p95_ms": 3.52,
+   "p99_ms": 4.27,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 0,
+   "rps": 123.48697304099657,
+   "status": {
+    "200": 3961
+   }
+  }
+ },
+ "counters": {
+  "entries": 21,
+  "rate_limited": 9638,
+  "rejected_already_issued": 8561,
+  "rejected_reused": 22354,
+  "replays": 7500,
+  "tokens_issued": 21
+ },
+ "extras": {
+  "the_human": {
+   "user_id": "t_042314",
+   "fcfs_seats_actual": 0,
+   "naive_expected_seats": 0.0,
+   "fairdrop_expected_seats": 0.465,
+   "fairdrop_actual_seats": 1
+  }
+ },
+ "verification": {
+  "reference_verifier_ok": true,
+  "checks": [
+   {
+    "name": "seed commitment: sha256(seed) == published seed_hash",
+    "ok": true,
+    "detail": ""
+   },
+   {
+    "name": "entry list has unique receipt ids",
+    "ok": true,
+    "detail": ""
+   },
+   {
+    "name": "merkle root recomputed from entry list == published root",
+    "ok": true,
+    "detail": "395c25b3eac9abdc18bf08bde303c6fa2a15bba55dc929ee76a27a5c2a64443d"
+   },
+   {
+    "name": "root equals the root observed when the list was locked (before seed reveal)",
+    "ok": true,
+    "detail": ""
+   },
+   {
+    "name": "final randomness = H(seed || root || beacon)",
+    "ok": true,
+    "detail": "beacon"
+   },
+   {
+    "name": "tier gold: winner order + waitlist recomputed from scores",
+    "ok": true,
+    "detail": "21 entries, 10 seats"
+   }
+  ],
+  "merkle_root": "395c25b3eac9abdc18bf08bde303c6fa2a15bba55dc929ee76a27a5c2a64443d",
+  "entry_count": 21,
+  "beacon": true,
+  "seed_hash": "c07b74b58fa4393ed57db5718976b992083feac354fa56373ca8c62ee2600c48"
+ },
+ "policies": {
+  "fcfs": {
+   "seats_total": 10,
+   "seats_by_kind": {
+    "bot": 10
+   },
+   "seats_by_operator": {
+    "proxy-a": 6,
+    "flood-b": 4
+   },
+   "identities_by_kind": {
+    "bot": 20,
+    "human": 1
+   },
+   "requests_by_kind": {
+    "bot": 29874,
+    "human": 1
+   },
+   "bot_seat_share": 1.0,
+   "bot_identity_share": 0.9523809523809523,
+   "bot_advantage_ratio": 1.05,
+   "humans_entered": 1,
+   "humans_won": 0,
+   "human_win_rate": 0.0,
+   "operators": {
+    "flood-a": {
+     "identities": 4,
+     "seats": 0,
+     "seats_per_identity": 0.0,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": null,
+     "identities_per_seat": null
+    },
+    "flood-b": {
+     "identities": 4,
+     "seats": 4,
+     "seats_per_identity": 1.0,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": 3.0,
+     "identities_per_seat": 1.0
+    },
+    "humans": {
+     "identities": 1,
+     "seats": 0,
+     "seats_per_identity": 0.0,
+     "identity_spend_usd": 3.0,
+     "cost_per_seat_usd": null,
+     "identities_per_seat": null
+    },
+    "proxy-a": {
+     "identities": 4,
+     "seats": 6,
+     "seats_per_identity": 1.5,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": 2.0,
+     "identities_per_seat": 0.6666666666666666
+    },
+    "proxy-b": {
+     "identities": 4,
+     "seats": 0,
+     "seats_per_identity": 0.0,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": null,
+     "identities_per_seat": null
+    },
+    "retry-a": {
+     "identities": 4,
+     "seats": 0,
+     "seats_per_identity": 0.0,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": null,
+     "identities_per_seat": null
+    }
+   },
+   "max_seats_one_actor": 4
+  },
+  "naive": {
+   "seats_total": 10,
+   "seats_by_kind": {
+    "bot": 10
+   },
+   "seats_by_operator": {
+    "proxy-a": 4,
+    "retry-a": 3,
+    "proxy-b": 2,
+    "flood-b": 1
+   },
+   "identities_by_kind": {
+    "bot": 20,
+    "human": 1
+   },
+   "requests_by_kind": {
+    "bot": 29874,
+    "human": 1
+   },
+   "bot_seat_share": 1.0,
+   "bot_identity_share": 0.9523809523809523,
+   "bot_advantage_ratio": 1.05,
+   "humans_entered": 1,
+   "humans_won": 0,
+   "human_win_rate": 0.0,
+   "operators": {
+    "flood-a": {
+     "identities": 4,
+     "seats": 0,
+     "seats_per_identity": 0.0,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": null,
+     "identities_per_seat": null
+    },
+    "flood-b": {
+     "identities": 4,
+     "seats": 1,
+     "seats_per_identity": 0.25,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": 12.0,
+     "identities_per_seat": 4.0
+    },
+    "humans": {
+     "identities": 1,
+     "seats": 0,
+     "seats_per_identity": 0.0,
+     "identity_spend_usd": 3.0,
+     "cost_per_seat_usd": null,
+     "identities_per_seat": null
+    },
+    "proxy-a": {
+     "identities": 4,
+     "seats": 4,
+     "seats_per_identity": 1.0,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": 3.0,
+     "identities_per_seat": 1.0
+    },
+    "proxy-b": {
+     "identities": 4,
+     "seats": 2,
+     "seats_per_identity": 0.5,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": 6.0,
+     "identities_per_seat": 2.0
+    },
+    "retry-a": {
+     "identities": 4,
+     "seats": 3,
+     "seats_per_identity": 0.75,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": 4.0,
+     "identities_per_seat": 1.3333333333333333
+    }
+   },
+   "max_seats_one_actor": 2
+  },
+  "fairdrop": {
+   "seats_total": 10,
+   "seats_by_kind": {
+    "bot": 9,
+    "human": 1
+   },
+   "seats_by_operator": {
+    "proxy-a": 3,
+    "flood-b": 2,
+    "proxy-b": 1,
+    "flood-a": 2,
+    "humans": 1,
+    "retry-a": 1
+   },
+   "identities_by_kind": {
+    "bot": 20,
+    "human": 1
+   },
+   "requests_by_kind": {
+    "bot": 29874,
+    "human": 1
+   },
+   "bot_seat_share": 0.9,
+   "bot_identity_share": 0.9523809523809523,
+   "bot_advantage_ratio": 0.9450000000000001,
+   "humans_entered": 1,
+   "humans_won": 1,
+   "human_win_rate": 1.0,
+   "operators": {
+    "flood-a": {
+     "identities": 4,
+     "seats": 2,
+     "seats_per_identity": 0.5,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": 6.0,
+     "identities_per_seat": 2.0
+    },
+    "flood-b": {
+     "identities": 4,
+     "seats": 2,
+     "seats_per_identity": 0.5,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": 6.0,
+     "identities_per_seat": 2.0
+    },
+    "humans": {
+     "identities": 1,
+     "seats": 1,
+     "seats_per_identity": 1.0,
+     "identity_spend_usd": 3.0,
+     "cost_per_seat_usd": 3.0,
+     "identities_per_seat": 1.0
+    },
+    "proxy-a": {
+     "identities": 4,
+     "seats": 3,
+     "seats_per_identity": 0.75,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": 4.0,
+     "identities_per_seat": 1.3333333333333333
+    },
+    "proxy-b": {
+     "identities": 4,
+     "seats": 1,
+     "seats_per_identity": 0.25,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": 12.0,
+     "identities_per_seat": 4.0
+    },
+    "retry-a": {
+     "identities": 4,
+     "seats": 1,
+     "seats_per_identity": 0.25,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": 12.0,
+     "identities_per_seat": 4.0
+    }
+   },
+   "max_seats_one_actor": 1
+  },
+  "naive_expected": {
+   "seats_total": 10.0,
+   "seats_by_kind": {
+    "bot": 10.0
+   },
+   "seats_by_operator": {
+    "proxy-a": 3.39,
+    "proxy-b": 3.295,
+    "retry-a": 2.48,
+    "flood-a": 0.38,
+    "flood-b": 0.45499999999999996
+   },
+   "identities_by_kind": {
+    "bot": 20,
+    "human": 1
+   },
+   "requests_by_kind": {
+    "bot": 29874,
+    "human": 1
+   },
+   "bot_seat_share": 1.0,
+   "bot_identity_share": 0.9523809523809523,
+   "bot_advantage_ratio": 1.05,
+   "humans_entered": 1,
+   "humans_won": 0,
+   "human_win_rate": 0.0,
+   "operators": {
+    "flood-a": {
+     "identities": 4,
+     "seats": 0.38,
+     "seats_per_identity": 0.095,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": 31.57894736842105,
+     "identities_per_seat": 10.526315789473685
+    },
+    "flood-b": {
+     "identities": 4,
+     "seats": 0.45499999999999996,
+     "seats_per_identity": 0.11374999999999999,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": 26.373626373626376,
+     "identities_per_seat": 8.791208791208792
+    },
+    "humans": {
+     "identities": 1,
+     "seats": 0,
+     "seats_per_identity": 0.0,
+     "identity_spend_usd": 3.0,
+     "cost_per_seat_usd": null,
+     "identities_per_seat": null
+    },
+    "proxy-a": {
+     "identities": 4,
+     "seats": 3.39,
+     "seats_per_identity": 0.8475,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": 3.5398230088495573,
+     "identities_per_seat": 1.1799410029498525
+    },
+    "proxy-b": {
+     "identities": 4,
+     "seats": 3.295,
+     "seats_per_identity": 0.82375,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": 3.6418816388467374,
+     "identities_per_seat": 1.2139605462822458
+    },
+    "retry-a": {
+     "identities": 4,
+     "seats": 2.48,
+     "seats_per_identity": 0.62,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": 4.838709677419355,
+     "identities_per_seat": 1.6129032258064517
+    }
+   },
+   "max_seats_one_actor": 0.9,
+   "monte_carlo_draws": 200,
+   "win_probability": {
+    "t_030016": 0.9,
+    "t_013847": 0.82,
+    "t_004197": 0.7,
+    "t_009155": 0.7,
+    "t_025049": 0.885,
+    "t_018226": 0.84,
+    "t_035130": 0.85,
+    "t_003895": 0.84,
+    "t_027345": 0.535,
+    "t_039414": 0.795,
+    "t_019018": 0.08,
+    "t_018518": 0.545,
+    "t_045490": 0.755,
+    "t_011079": 0.125,
+    "t_008606": 0.135,
+    "t_002247": 0.115,
+    "t_015306": 0.065,
+    "t_049141": 0.1,
+    "t_016863": 0.105,
+    "t_015233": 0.11
+   }
+  },
+  "fairdrop_expected": {
+   "seats_total": 10.0,
+   "seats_by_kind": {
+    "bot": 9.535,
+    "human": 0.465
+   },
+   "seats_by_operator": {
+    "flood-b": 1.7550000000000001,
+    "proxy-b": 1.93,
+    "proxy-a": 1.85,
+    "retry-a": 2.015,
+    "flood-a": 1.985,
+    "humans": 0.465
+   },
+   "identities_by_kind": {
+    "bot": 20,
+    "human": 1
+   },
+   "requests_by_kind": {
+    "bot": 29874,
+    "human": 1
+   },
+   "bot_seat_share": 0.9535,
+   "bot_identity_share": 0.9523809523809523,
+   "bot_advantage_ratio": 1.0011750000000001,
+   "humans_entered": 1,
+   "humans_won": 0.465,
+   "human_win_rate": 0.465,
+   "operators": {
+    "flood-a": {
+     "identities": 4,
+     "seats": 1.985,
+     "seats_per_identity": 0.49625,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": 6.045340050377834,
+     "identities_per_seat": 2.0151133501259446
+    },
+    "flood-b": {
+     "identities": 4,
+     "seats": 1.7550000000000001,
+     "seats_per_identity": 0.43875000000000003,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": 6.837606837606837,
+     "identities_per_seat": 2.2792022792022792
+    },
+    "humans": {
+     "identities": 1,
+     "seats": 0.465,
+     "seats_per_identity": 0.465,
+     "identity_spend_usd": 3.0,
+     "cost_per_seat_usd": 6.451612903225806,
+     "identities_per_seat": 2.150537634408602
+    },
+    "proxy-a": {
+     "identities": 4,
+     "seats": 1.85,
+     "seats_per_identity": 0.4625,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": 6.486486486486486,
+     "identities_per_seat": 2.162162162162162
+    },
+    "proxy-b": {
+     "identities": 4,
+     "seats": 1.93,
+     "seats_per_identity": 0.4825,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": 6.217616580310881,
+     "identities_per_seat": 2.072538860103627
+    },
+    "retry-a": {
+     "identities": 4,
+     "seats": 2.015,
+     "seats_per_identity": 0.50375,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": 5.9553349875930515,
+     "identities_per_seat": 1.9851116625310172
+    }
+   },
+   "max_seats_one_actor": 0.54,
+   "monte_carlo_draws": 200,
+   "win_probability": {
+    "t_049141": 0.44,
+    "t_039414": 0.45,
+    "t_045490": 0.44,
+    "t_018518": 0.455,
+    "t_011079": 0.475,
+    "t_016863": 0.435,
+    "t_002247": 0.415,
+    "t_027345": 0.54,
+    "t_003895": 0.5,
+    "t_035130": 0.435,
+    "t_042314": 0.465,
+    "t_018226": 0.52,
+    "t_025049": 0.52,
+    "t_015306": 0.475,
+    "t_008606": 0.465,
+    "t_013847": 0.46,
+    "t_004197": 0.485,
+    "t_019018": 0.525,
+    "t_015233": 0.51,
+    "t_009155": 0.535,
+    "t_030016": 0.455
+   }
+  },
+  "fcfs_live": {
+   "seats_total": 10,
+   "seats_by_kind": {
+    "bot": 10
+   },
+   "seats_by_operator": {
+    "proxy-a": 6,
+    "flood-b": 4
+   },
+   "identities_by_kind": {
+    "bot": 20,
+    "human": 1
+   },
+   "requests_by_kind": {
+    "bot": 30,
+    "human": 1
+   },
+   "bot_seat_share": 1.0,
+   "bot_identity_share": 0.9523809523809523,
+   "bot_advantage_ratio": 1.05,
+   "humans_entered": 1,
+   "humans_won": 0,
+   "human_win_rate": 0.0,
+   "operators": {
+    "flood-a": {
+     "identities": 4,
+     "seats": 0,
+     "seats_per_identity": 0.0,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": null,
+     "identities_per_seat": null
+    },
+    "flood-b": {
+     "identities": 4,
+     "seats": 4,
+     "seats_per_identity": 1.0,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": 3.0,
+     "identities_per_seat": 1.0
+    },
+    "humans": {
+     "identities": 1,
+     "seats": 0,
+     "seats_per_identity": 0.0,
+     "identity_spend_usd": 3.0,
+     "cost_per_seat_usd": null,
+     "identities_per_seat": null
+    },
+    "proxy-a": {
+     "identities": 4,
+     "seats": 6,
+     "seats_per_identity": 1.5,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": 2.0,
+     "identities_per_seat": 0.6666666666666666
+    },
+    "proxy-b": {
+     "identities": 4,
+     "seats": 0,
+     "seats_per_identity": 0.0,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": null,
+     "identities_per_seat": null
+    },
+    "retry-a": {
+     "identities": 4,
+     "seats": 0,
+     "seats_per_identity": 0.0,
+     "identity_spend_usd": 12.0,
+     "cost_per_seat_usd": null,
+     "identities_per_seat": null
+    }
+   },
+   "max_seats_one_actor": 4
+  }
+ },
+ "counterfactual_definitions": {
+  "fairdrop": "one entry per verified identity; cryptographic draw; allocation ignores time, volume and IP",
+  "fcfs": "earliest arrival wins; one seat per request; max_per_account seats per account",
+  "naive": "every request is a lottery ticket (retries and floods multiply odds); same cap"
+ },
+ "tiers": [
+  {
+   "id": "gold",
+   "name": "Gold",
+   "price_cents": 25000,
+   "seats": 10
+  }
+ ],
+ "integrity": {
+  "audit_chain": {
+   "ok": true,
+   "length": 528392,
+   "head_hash": "c761ae67c14553d7c2f90c55c6b89083ca04fd46ea299a1c1d118b7b852e539d"
+  },
+  "drop_id": "exp-exp4_one_human-fairdrop-6b9d69",
+  "info": {
+   "allocations_pg": 0,
+   "blocked_duplicate_seat_attempts": 0,
+   "entries_registered": 21,
+   "illegal_transitions_rejected": 0,
+   "ledger_lag": 0,
+   "missing_receipt_examples": null,
+   "rejected_reused_tokens": 22354,
+   "seats_owned_redis": 0,
+   "tokens_issued": 21
+  },
+  "ok": true,
+  "total_violations": 0,
+  "violations": {
+   "broken_merkle": 0,
+   "duplicate_entries": 0,
+   "duplicate_seats": 0,
+   "invalid_transitions": 0,
+   "missing_receipts": 0,
+   "oversold": 0
+  }
+ },
+ "headline": {
+  "policy": "fairdrop",
+  "tag": "",
+  "actors": 21,
+  "humans": 1,
+  "bot_identities": 20,
+  "duration_s": 32.1,
+  "client_requests": 52077,
+  "bot_advantage_ratio": {
+   "fcfs": 1.05,
+   "naive": 1.05,
+   "fairdrop": 1.0011750000000001,
+   "fcfs_live": 1.05
+  },
+  "human_win_rate": {
+   "fcfs": 0.0,
+   "naive": 0.0,
+   "fairdrop": 0.465,
+   "fcfs_live": 0.0
+  },
+  "bot_seat_share": {
+   "fcfs": 1.0,
+   "naive": 1.0,
+   "fairdrop": 0.9535,
+   "fcfs_live": 1.0
+  },
+  "integrity_ok": true,
+  "integrity_violations": {
+   "broken_merkle": 0,
+   "duplicate_entries": 0,
+   "duplicate_seats": 0,
+   "invalid_transitions": 0,
+   "missing_receipts": 0,
+   "oversold": 0
+  },
+  "verified_by_reference_verifier": true,
+  "p99_ms": {
+   "/drops/{id}/test-token": 4.35,
+   "/drops/{id}/register": 4.53
+  }
+ },
+ "live_fcfs_latency": {
+  "POST /test/login": {
+   "requests": 21,
+   "p50_ms": 2.07,
+   "p95_ms": 3.45,
+   "p99_ms": 3.7,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 0,
+   "rps": 0.652831608438882,
+   "status": {
+    "200": 21
+   }
+  },
+  "POST /baseline/{id}/buy": {
+   "requests": 31,
+   "p50_ms": 1.18,
+   "p95_ms": 1.68,
+   "p99_ms": 2.08,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 21,
+   "rps": 0.9637038029335877,
+   "status": {
+    "200": 10,
+    "409": 21
+   }
+  },
+  "GET /drops/{id}": {
+   "requests": 1,
+   "p50_ms": 1.4,
+   "p95_ms": 1.4,
+   "p99_ms": 1.4,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 0,
+   "rps": 0.03108721944947057,
+   "status": {
+    "200": 1
+   }
+  }
+ }
+}

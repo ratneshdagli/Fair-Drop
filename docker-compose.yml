@@ -1,0 +1,91 @@
+# Fair Drop - full stack. `docker compose up --build` then open http://localhost:8080
+x-api: &api
+  build: ./backend
+  restart: unless-stopped
+  depends_on: [redis, postgres]
+  environment: &apienv
+    MODE: api
+    REDIS_ADDR: redis:6379
+    PG_DSN: postgres://fairdrop:fairdrop@postgres:5432/fairdrop?sslmode=disable
+    JWT_SECRET: ${JWT_SECRET:-dev-only-change-me-jwt-secret}
+    ADMIN_USER: ${ADMIN_USER:-admin}
+    ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin-demo-pass}
+    TEST_MODE: ${TEST_MODE:-true}
+    TEST_KEY: ${TEST_KEY:-test-key-demo}
+    BLIND_MODE: ${BLIND_MODE:-blind}
+    DRAND_ENABLED: ${DRAND_ENABLED:-true}
+    MAX_PER_ACCOUNT: ${MAX_PER_ACCOUNT:-4}
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: fd-redis
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxclients", "20000"]
+    ports: ["127.0.0.1:6379:6379"]
+  postgres:
+    image: postgres:16-alpine
+    container_name: fd-postgres
+    command: ["postgres", "-c", "fsync=off", "-c", "synchronous_commit=off", "-c", "max_connections=200", "-c", "shared_buffers=256MB"]
+    environment: { POSTGRES_USER: fairdrop, POSTGRES_PASSWORD: fairdrop, POSTGRES_DB: fairdrop }
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+  api1:
+    <<: *api
+    container_name: fd-api-1
+    environment: { <<: *apienv, REPLICA_ID: api-1 }
+    ports: ["127.0.0.1:8081:8080"]
+  api2:
+    <<: *api
+    container_name: fd-api-2
+    environment: { <<: *apienv, REPLICA_ID: api-2 }
+    ports: ["127.0.0.1:8082:8080"]
+  api3:
+    <<: *api
+    container_name: fd-api-3
+    environment: { <<: *apienv, REPLICA_ID: api-3 }
+    ports: ["127.0.0.1:8083:8080"]
+  worker:
+    <<: *api
+    container_name: fd-worker
+    environment: { <<: *apienv, MODE: worker, REPLICA_ID: worker }
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: fd-nginx
+    depends_on: [api1, api2, api3, frontend]
+    volumes: ["./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro"]
+    ports: ["${GATEWAY_PORT:-8088}:80"]
+    restart: unless-stopped
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: fd-prometheus
+    volumes: ["./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro"]
+    ports: ["9090:9090"]
+  grafana:
+    image: grafana/grafana:11.3.0
+    container_name: fd-grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/fairdrop.json
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports: ["3001:3000"]
+    depends_on: [prometheus]
+  frontend:
+    build: { context: ./frontend }
+    container_name: fd-frontend
+    restart: unless-stopped
+  attack:
+    build: { context: ., dockerfile: attack_engine/Dockerfile }
+    container_name: fd-attack
+    depends_on: [nginx]
+    environment:
+      FD_BASE_URL: http://nginx/api
+      FD_TEST_KEY: ${TEST_KEY:-test-key-demo}
+      FD_KILL_URLS: http://api2:8080
+      FD_IDENTITY_COST_USD: ${FD_IDENTITY_COST_USD:-3.0}
+    volumes: ["./reports:/app/reports"]
+    ports: ["9200:9200"]
+volumes:
+  pgdata:

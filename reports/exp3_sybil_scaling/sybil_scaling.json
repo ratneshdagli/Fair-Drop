@@ -1,0 +1,32 @@
+[
+ {
+  "identities": 100,
+  "fcfs_seats": 100,
+  "fcfs_cost_per_seat_usd": 3.0,
+  "naive_expected_seats": 29.205000000000002,
+  "naive_expected_cost_per_seat_usd": 10.27221366204417,
+  "fairdrop_expected_seats": 9.505000000000008,
+  "fairdrop_expected_cost_per_seat_usd": 31.562335612835323,
+  "fairdrop_seats_per_identity": 0.09505000000000008
+ },
+ {
+  "identities": 1000,
+  "fcfs_seats": 100,
+  "fcfs_cost_per_seat_usd": 30.0,
+  "naive_expected_seats": 83.33999999999989,
+  "naive_expected_cost_per_seat_usd": 35.99712023038162,
+  "fairdrop_expected_seats": 55.17999999999983,
+  "fairdrop_expected_cost_per_seat_usd": 54.367524465386175,
+  "fairdrop_seats_per_identity": 0.055179999999999826
+ },
+ {
+  "identities": 1250,
+  "fcfs_seats": 100,
+  "fcfs_cost_per_seat_usd": 37.5,
+  "naive_expected_seats": 86.8699999999999,
+  "naive_expected_cost_per_seat_usd": 43.167952112351834,
+  "fairdrop_expected_seats": 62.36999999999981,
+  "fairdrop_expected_cost_per_seat_usd": 60.12506012506031,
+  "fairdrop_seats_per_identity": 0.04989599999999985
+ }
+]

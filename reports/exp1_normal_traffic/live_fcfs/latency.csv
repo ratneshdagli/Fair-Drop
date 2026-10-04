@@ -1,0 +1,4 @@
+endpoint,requests,rps,p50_ms,p95_ms,p99_ms,errors,error_rate,rejected_by_design
+POST /test/login,50000,800.5,1.13,7.27,335.71,0,0.0,0
+GET /drops/{id},50000,800.5,1.07,6.56,29.43,0,0.0,0
+POST /baseline/{id}/buy,50000,800.5,1.76,4.01,11.37,0,0.0,49500

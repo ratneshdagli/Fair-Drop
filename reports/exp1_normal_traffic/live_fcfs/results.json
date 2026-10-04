@@ -1,0 +1,209 @@
+{
+ "meta": {
+  "experiment": "exp1_normal_traffic",
+  "tag": "",
+  "scenario": {
+   "name": "exp1_normal_traffic",
+   "description": "Experiment 1 - normal traffic: every verified identity is a human, no bots. Baseline latency + integrity.",
+   "policy": "fcfs",
+   "humans": 50000,
+   "operators": [],
+   "tiers": [
+    {
+     "id": "gold",
+     "name": "Gold",
+     "price_cents": 25000,
+     "seats": 100
+    },
+    {
+     "id": "silver",
+     "name": "Silver",
+     "price_cents": 15000,
+     "seats": 150
+    },
+    {
+     "id": "general",
+     "name": "General",
+     "price_cents": 8000,
+     "seats": 250
+    }
+   ],
+   "window_sec": 60.0,
+   "arrival": "rush",
+   "concurrency": 2000,
+   "processes": 4,
+   "seed": 7,
+   "identity_cost_usd": 3.0,
+   "kill_replica_at_s": null,
+   "malicious": false,
+   "claims": false,
+   "claim_sec": 20,
+   "human_claim_rate": 0.9,
+   "tag": ""
+  },
+  "started": "2026-10-03T16:43:52",
+  "duration_s": 62.5,
+  "drop_id": "exp-exp1_normal_traffic-fcfs-4866bd",
+  "policy": "fcfs",
+  "population": 50000,
+  "identity_cost_usd": 3.0,
+  "actors": 50000,
+  "operators": 0
+ },
+ "traffic": {
+  "humans": 50000,
+  "bot_identities": 0,
+  "operators": {},
+  "client_requests": 150000,
+  "client_events": {},
+  "receipts_issued_to_clients": 0
+ },
+ "latency": {
+  "POST /test/login": {
+   "requests": 50000,
+   "p50_ms": 1.13,
+   "p95_ms": 7.27,
+   "p99_ms": 335.71,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 0,
+   "rps": 800.4840084735073,
+   "status": {
+    "200": 50000
+   }
+  },
+  "GET /drops/{id}": {
+   "requests": 50000,
+   "p50_ms": 1.07,
+   "p95_ms": 6.56,
+   "p99_ms": 29.43,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 0,
+   "rps": 800.4840084735073,
+   "status": {
+    "200": 50000
+   }
+  },
+  "POST /baseline/{id}/buy": {
+   "requests": 50000,
+   "p50_ms": 1.76,
+   "p95_ms": 4.01,
+   "p99_ms": 11.37,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 49500,
+   "rps": 800.4840084735073,
+   "status": {
+    "200": 500,
+    "409": 49500
+   }
+  }
+ },
+ "counters": {
+  "sold_out_rejects": 49500
+ },
+ "extras": {},
+ "policies": {
+  "fcfs_live": {
+   "seats_total": 500,
+   "seats_by_kind": {
+    "human": 500
+   },
+   "seats_by_operator": {
+    "humans": 500
+   },
+   "identities_by_kind": {
+    "human": 50000
+   },
+   "requests_by_kind": {
+    "human": 50000
+   },
+   "bot_seat_share": 0.0,
+   "bot_identity_share": 0.0,
+   "bot_advantage_ratio": null,
+   "humans_entered": 50000,
+   "humans_won": 500,
+   "human_win_rate": 0.01,
+   "operators": {
+    "humans": {
+     "identities": 50000,
+     "seats": 500,
+     "seats_per_identity": 0.01,
+     "identity_spend_usd": 150000.0,
+     "cost_per_seat_usd": 300.0,
+     "identities_per_seat": 100.0
+    }
+   },
+   "max_seats_one_actor": 1
+  }
+ },
+ "integrity": {
+  "audit_chain": {
+   "ok": true,
+   "length": 126302,
+   "head_hash": "9db9a14c0d353d64b9e7bba49810754f30a415028a4e0ccfb39713a4475af4f0"
+  },
+  "drop_id": "exp-exp1_normal_traffic-fcfs-4866bd",
+  "info": {
+   "allocations_pg": 0,
+   "blocked_duplicate_seat_attempts": 0,
+   "entries_registered": 0,
+   "illegal_transitions_rejected": 0,
+   "ledger_lag": 0,
+   "rejected_reused_tokens": 0,
+   "seats_owned_redis": 0,
+   "tokens_issued": 0
+  },
+  "ok": true,
+  "total_violations": 0,
+  "violations": {
+   "broken_merkle": 0,
+   "duplicate_entries": 0,
+   "duplicate_seats": 0,
+   "invalid_transitions": 0,
+   "missing_receipts": null,
+   "oversold": 0
+  }
+ },
+ "headline": {
+  "policy": "fcfs",
+  "tag": "",
+  "actors": 50000,
+  "humans": 50000,
+  "bot_identities": 0,
+  "duration_s": 62.5,
+  "client_requests": 150000,
+  "bot_advantage_ratio": {
+   "fcfs": null,
+   "naive": null,
+   "fairdrop": null,
+   "fcfs_live": null
+  },
+  "human_win_rate": {
+   "fcfs": null,
+   "naive": null,
+   "fairdrop": null,
+   "fcfs_live": 0.01
+  },
+  "bot_seat_share": {
+   "fcfs": null,
+   "naive": null,
+   "fairdrop": null,
+   "fcfs_live": 0.0
+  },
+  "integrity_ok": true,
+  "integrity_violations": {
+   "broken_merkle": 0,
+   "duplicate_entries": 0,
+   "duplicate_seats": 0,
+   "invalid_transitions": 0,
+   "missing_receipts": null,
+   "oversold": 0
+  },
+  "verified_by_reference_verifier": null,
+  "p99_ms": {
+   "/baseline/{id}/buy": 11.37
+  }
+ }
+}

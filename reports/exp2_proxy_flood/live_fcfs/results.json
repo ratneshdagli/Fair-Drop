@@ -1,0 +1,671 @@
+{
+ "meta": {
+  "experiment": "exp2_proxy_flood",
+  "tag": "",
+  "scenario": {
+   "name": "exp2_proxy_flood",
+   "description": "Experiment 2 - proxy flood: 20 operators x 10 identities, rotating through 2,000 IPs each, hammering with retries.",
+   "policy": "fcfs",
+   "humans": 14800,
+   "operators": [
+    {
+     "id": "op00",
+     "profile": "PROXY_ROTATOR",
+     "identities": 10,
+     "ip_pool": 2000,
+     "params": {
+      "requests": 120
+     },
+     "start": "open"
+    },
+    {
+     "id": "op01",
+     "profile": "PROXY_ROTATOR",
+     "identities": 10,
+     "ip_pool": 2000,
+     "params": {
+      "requests": 120
+     },
+     "start": "open"
+    },
+    {
+     "id": "op02",
+     "profile": "PROXY_ROTATOR",
+     "identities": 10,
+     "ip_pool": 2000,
+     "params": {
+      "requests": 120
+     },
+     "start": "open"
+    },
+    {
+     "id": "op03",
+     "profile": "PROXY_ROTATOR",
+     "identities": 10,
+     "ip_pool": 2000,
+     "params": {
+      "requests": 120
+     },
+     "start": "open"
+    },
+    {
+     "id": "op04",
+     "profile": "PROXY_ROTATOR",
+     "identities": 10,
+     "ip_pool": 2000,
+     "params": {
+      "requests": 120
+     },
+     "start": "open"
+    },
+    {
+     "id": "op05",
+     "profile": "PROXY_ROTATOR",
+     "identities": 10,
+     "ip_pool": 2000,
+     "params": {
+      "requests": 120
+     },
+     "start": "open"
+    },
+    {
+     "id": "op06",
+     "profile": "PROXY_ROTATOR",
+     "identities": 10,
+     "ip_pool": 2000,
+     "params": {
+      "requests": 120
+     },
+     "start": "open"
+    },
+    {
+     "id": "op07",
+     "profile": "PROXY_ROTATOR",
+     "identities": 10,
+     "ip_pool": 2000,
+     "params": {
+      "requests": 120
+     },
+     "start": "open"
+    },
+    {
+     "id": "op08",
+     "profile": "PROXY_ROTATOR",
+     "identities": 10,
+     "ip_pool": 2000,
+     "params": {
+      "requests": 120
+     },
+     "start": "open"
+    },
+    {
+     "id": "op09",
+     "profile": "PROXY_ROTATOR",
+     "identities": 10,
+     "ip_pool": 2000,
+     "params": {
+      "requests": 120
+     },
+     "start": "open"
+    },
+    {
+     "id": "op10",
+     "profile": "PROXY_ROTATOR",
+     "identities": 10,
+     "ip_pool": 2000,
+     "params": {
+      "requests": 120
+     },
+     "start": "open"
+    },
+    {
+     "id": "op11",
+     "profile": "PROXY_ROTATOR",
+     "identities": 10,
+     "ip_pool": 2000,
+     "params": {
+      "requests": 120
+     },
+     "start": "open"
+    },
+    {
+     "id": "op12",
+     "profile": "PROXY_ROTATOR",
+     "identities": 10,
+     "ip_pool": 2000,
+     "params": {
+      "requests": 120
+     },
+     "start": "open"
+    },
+    {
+     "id": "op13",
+     "profile": "PROXY_ROTATOR",
+     "identities": 10,
+     "ip_pool": 2000,
+     "params": {
+      "requests": 120
+     },
+     "start": "open"
+    },
+    {
+     "id": "op14",
+     "profile": "PROXY_ROTATOR",
+     "identities": 10,
+     "ip_pool": 2000,
+     "params": {
+      "requests": 120
+     },
+     "start": "open"
+    },
+    {
+     "id": "op15",
+     "profile": "PROXY_ROTATOR",
+     "identities": 10,
+     "ip_pool": 2000,
+     "params": {
+      "requests": 120
+     },
+     "start": "open"
+    },
+    {
+     "id": "op16",
+     "profile": "PROXY_ROTATOR",
+     "identities": 10,
+     "ip_pool": 2000,
+     "params": {
+      "requests": 120
+     },
+     "start": "open"
+    },
+    {
+     "id": "op17",
+     "profile": "PROXY_ROTATOR",
+     "identities": 10,
+     "ip_pool": 2000,
+     "params": {
+      "requests": 120
+     },
+     "start": "open"
+    },
+    {
+     "id": "op18",
+     "profile": "PROXY_ROTATOR",
+     "identities": 10,
+     "ip_pool": 2000,
+     "params": {
+      "requests": 120
+     },
+     "start": "open"
+    },
+    {
+     "id": "op19",
+     "profile": "PROXY_ROTATOR",
+     "identities": 10,
+     "ip_pool": 2000,
+     "params": {
+      "requests": 120
+     },
+     "start": "open"
+    }
+   ],
+   "tiers": [
+    {
+     "id": "gold",
+     "name": "Gold",
+     "price_cents": 25000,
+     "seats": 100
+    },
+    {
+     "id": "silver",
+     "name": "Silver",
+     "price_cents": 15000,
+     "seats": 150
+    },
+    {
+     "id": "general",
+     "name": "General",
+     "price_cents": 8000,
+     "seats": 250
+    }
+   ],
+   "window_sec": 36.0,
+   "arrival": "rush",
+   "concurrency": 2000,
+   "processes": 4,
+   "seed": 7,
+   "identity_cost_usd": 3.0,
+   "kill_replica_at_s": null,
+   "malicious": false,
+   "claims": false,
+   "claim_sec": 20,
+   "human_claim_rate": 0.9,
+   "tag": ""
+  },
+  "started": "2026-10-03T18:28:10",
+  "duration_s": 38.8,
+  "drop_id": "exp-exp2_proxy_flood-fcfs-4866bd",
+  "policy": "fcfs",
+  "population": 50000,
+  "identity_cost_usd": 3.0,
+  "actors": 15000,
+  "operators": 20
+ },
+ "traffic": {
+  "humans": 14800,
+  "bot_identities": 200,
+  "operators": {
+   "op00": {
+    "profile": "PROXY_ROTATOR",
+    "ip_pool": 2000
+   },
+   "op01": {
+    "profile": "PROXY_ROTATOR",
+    "ip_pool": 2000
+   },
+   "op02": {
+    "profile": "PROXY_ROTATOR",
+    "ip_pool": 2000
+   },
+   "op03": {
+    "profile": "PROXY_ROTATOR",
+    "ip_pool": 2000
+   },
+   "op04": {
+    "profile": "PROXY_ROTATOR",
+    "ip_pool": 2000
+   },
+   "op05": {
+    "profile": "PROXY_ROTATOR",
+    "ip_pool": 2000
+   },
+   "op06": {
+    "profile": "PROXY_ROTATOR",
+    "ip_pool": 2000
+   },
+   "op07": {
+    "profile": "PROXY_ROTATOR",
+    "ip_pool": 2000
+   },
+   "op08": {
+    "profile": "PROXY_ROTATOR",
+    "ip_pool": 2000
+   },
+   "op09": {
+    "profile": "PROXY_ROTATOR",
+    "ip_pool": 2000
+   },
+   "op10": {
+    "profile": "PROXY_ROTATOR",
+    "ip_pool": 2000
+   },
+   "op11": {
+    "profile": "PROXY_ROTATOR",
+    "ip_pool": 2000
+   },
+   "op12": {
+    "profile": "PROXY_ROTATOR",
+    "ip_pool": 2000
+   },
+   "op13": {
+    "profile": "PROXY_ROTATOR",
+    "ip_pool": 2000
+   },
+   "op14": {
+    "profile": "PROXY_ROTATOR",
+    "ip_pool": 2000
+   },
+   "op15": {
+    "profile": "PROXY_ROTATOR",
+    "ip_pool": 2000
+   },
+   "op16": {
+    "profile": "PROXY_ROTATOR",
+    "ip_pool": 2000
+   },
+   "op17": {
+    "profile": "PROXY_ROTATOR",
+    "ip_pool": 2000
+   },
+   "op18": {
+    "profile": "PROXY_ROTATOR",
+    "ip_pool": 2000
+   },
+   "op19": {
+    "profile": "PROXY_ROTATOR",
+    "ip_pool": 2000
+   }
+  },
+  "client_requests": 44900,
+  "client_events": {},
+  "receipts_issued_to_clients": 0
+ },
+ "latency": {
+  "POST /test/login": {
+   "requests": 15000,
+   "p50_ms": 3.86,
+   "p95_ms": 732.91,
+   "p99_ms": 854.38,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 0,
+   "rps": 386.9647656014426,
+   "status": {
+    "200": 15000
+   }
+  },
+  "POST /baseline/{id}/buy": {
+   "requests": 15100,
+   "p50_ms": 3.64,
+   "p95_ms": 67.44,
+   "p99_ms": 132.43,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 14600,
+   "rps": 389.5445307054522,
+   "status": {
+    "200": 500,
+    "409": 14600
+   }
+  },
+  "GET /drops/{id}": {
+   "requests": 14800,
+   "p50_ms": 2.82,
+   "p95_ms": 59.78,
+   "p99_ms": 89.65,
+   "errors": 0,
+   "error_rate": 0.0,
+   "rejected_by_design": 0,
+   "rps": 381.80523539342335,
+   "status": {
+    "200": 14800
+   }
+  }
+ },
+ "counters": {
+  "sold_out_rejects": 14583
+ },
+ "extras": {},
+ "policies": {
+  "fcfs_live": {
+   "seats_total": 500,
+   "seats_by_kind": {
+    "bot": 100,
+    "human": 400
+   },
+   "seats_by_operator": {
+    "op13": 12,
+    "op18": 4,
+    "op10": 6,
+    "op00": 10,
+    "op12": 9,
+    "op03": 8,
+    "op08": 6,
+    "op07": 8,
+    "op15": 10,
+    "op17": 4,
+    "op01": 7,
+    "op02": 5,
+    "op14": 3,
+    "op05": 2,
+    "op09": 2,
+    "op16": 2,
+    "op19": 2,
+    "humans": 400
+   },
+   "identities_by_kind": {
+    "human": 14800,
+    "bot": 200
+   },
+   "requests_by_kind": {
+    "human": 14800,
+    "bot": 300
+   },
+   "bot_seat_share": 0.2,
+   "bot_identity_share": 0.013333333333333334,
+   "bot_advantage_ratio": 15.0,
+   "humans_entered": 14800,
+   "humans_won": 400,
+   "human_win_rate": 0.02702702702702703,
+   "operators": {
+    "humans": {
+     "identities": 14800,
+     "seats": 400,
+     "seats_per_identity": 0.02702702702702703,
+     "identity_spend_usd": 44400.0,
+     "cost_per_seat_usd": 111.0,
+     "identities_per_seat": 37.0
+    },
+    "op00": {
+     "identities": 10,
+     "seats": 10,
+     "seats_per_identity": 1.0,
+     "identity_spend_usd": 30.0,
+     "cost_per_seat_usd": 3.0,
+     "identities_per_seat": 1.0
+    },
+    "op01": {
+     "identities": 10,
+     "seats": 7,
+     "seats_per_identity": 0.7,
+     "identity_spend_usd": 30.0,
+     "cost_per_seat_usd": 4.285714285714286,
+     "identities_per_seat": 1.4285714285714286
+    },
+    "op02": {
+     "identities": 10,
+     "seats": 5,
+     "seats_per_identity": 0.5,
+     "identity_spend_usd": 30.0,
+     "cost_per_seat_usd": 6.0,
+     "identities_per_seat": 2.0
+    },
+    "op03": {
+     "identities": 10,
+     "seats": 8,
+     "seats_per_identity": 0.8,
+     "identity_spend_usd": 30.0,
+     "cost_per_seat_usd": 3.75,
+     "identities_per_seat": 1.25
+    },
+    "op04": {
+     "identities": 10,
+     "seats": 0,
+     "seats_per_identity": 0.0,
+     "identity_spend_usd": 30.0,
+     "cost_per_seat_usd": null,
+     "identities_per_seat": null
+    },
+    "op05": {
+     "identities": 10,
+     "seats": 2,
+     "seats_per_identity": 0.2,
+     "identity_spend_usd": 30.0,
+     "cost_per_seat_usd": 15.0,
+     "identities_per_seat": 5.0
+    },
+    "op06": {
+     "identities": 10,
+     "seats": 0,
+     "seats_per_identity": 0.0,
+     "identity_spend_usd": 30.0,
+     "cost_per_seat_usd": null,
+     "identities_per_seat": null
+    },
+    "op07": {
+     "identities": 10,
+     "seats": 8,
+     "seats_per_identity": 0.8,
+     "identity_spend_usd": 30.0,
+     "cost_per_seat_usd": 3.75,
+     "identities_per_seat": 1.25
+    },
+    "op08": {
+     "identities": 10,
+     "seats": 6,
+     "seats_per_identity": 0.6,
+     "identity_spend_usd": 30.0,
+     "cost_per_seat_usd": 5.0,
+     "identities_per_seat": 1.6666666666666667
+    },
+    "op09": {
+     "identities": 10,
+     "seats": 2,
+     "seats_per_identity": 0.2,
+     "identity_spend_usd": 30.0,
+     "cost_per_seat_usd": 15.0,
+     "identities_per_seat": 5.0
+    },
+    "op10": {
+     "identities": 10,
+     "seats": 6,
+     "seats_per_identity": 0.6,
+     "identity_spend_usd": 30.0,
+     "cost_per_seat_usd": 5.0,
+     "identities_per_seat": 1.6666666666666667
+    },
+    "op11": {
+     "identities": 10,
+     "seats": 0,
+     "seats_per_identity": 0.0,
+     "identity_spend_usd": 30.0,
+     "cost_per_seat_usd": null,
+     "identities_per_seat": null
+    },
+    "op12": {
+     "identities": 10,
+     "seats": 9,
+     "seats_per_identity": 0.9,
+     "identity_spend_usd": 30.0,
+     "cost_per_seat_usd": 3.3333333333333335,
+     "identities_per_seat": 1.1111111111111112
+    },
+    "op13": {
+     "identities": 10,
+     "seats": 12,
+     "seats_per_identity": 1.2,
+     "identity_spend_usd": 30.0,
+     "cost_per_seat_usd": 2.5,
+     "identities_per_seat": 0.8333333333333334
+    },
+    "op14": {
+     "identities": 10,
+     "seats": 3,
+     "seats_per_identity": 0.3,
+     "identity_spend_usd": 30.0,
+     "cost_per_seat_usd": 10.0,
+     "identities_per_seat": 3.3333333333333335
+    },
+    "op15": {
+     "identities": 10,
+     "seats": 10,
+     "seats_per_identity": 1.0,
+     "identity_spend_usd": 30.0,
+     "cost_per_seat_usd": 3.0,
+     "identities_per_seat": 1.0
+    },
+    "op16": {
+     "identities": 10,
+     "seats": 2,
+     "seats_per_identity": 0.2,
+     "identity_spend_usd": 30.0,
+     "cost_per_seat_usd": 15.0,
+     "identities_per_seat": 5.0
+    },
+    "op17": {
+     "identities": 10,
+     "seats": 4,
+     "seats_per_identity": 0.4,
+     "identity_spend_usd": 30.0,
+     "cost_per_seat_usd": 7.5,
+     "identities_per_seat": 2.5
+    },
+    "op18": {
+     "identities": 10,
+     "seats": 4,
+     "seats_per_identity": 0.4,
+     "identity_spend_usd": 30.0,
+     "cost_per_seat_usd": 7.5,
+     "identities_per_seat": 2.5
+    },
+    "op19": {
+     "identities": 10,
+     "seats": 2,
+     "seats_per_identity": 0.2,
+     "identity_spend_usd": 30.0,
+     "cost_per_seat_usd": 15.0,
+     "identities_per_seat": 5.0
+    }
+   },
+   "max_seats_one_actor": 4
+  }
+ },
+ "integrity": {
+  "audit_chain": {
+   "ok": true,
+   "length": 687873,
+   "head_hash": "2920f0212443e6d22bc53f8d45b9a2a91dfe8af7d4a1ca6908eed8a14147b9a7"
+  },
+  "drop_id": "exp-exp2_proxy_flood-fcfs-4866bd",
+  "info": {
+   "allocations_pg": 0,
+   "blocked_duplicate_seat_attempts": 0,
+   "entries_registered": 0,
+   "illegal_transitions_rejected": 0,
+   "ledger_lag": 0,
+   "rejected_reused_tokens": 0,
+   "seats_owned_redis": 0,
+   "tokens_issued": 0
+  },
+  "ok": true,
+  "total_violations": 0,
+  "violations": {
+   "broken_merkle": 0,
+   "duplicate_entries": 0,
+   "duplicate_seats": 0,
+   "invalid_transitions": 0,
+   "missing_receipts": null,
+   "oversold": 0
+  }
+ },
+ "headline": {
+  "policy": "fcfs",
+  "tag": "",
+  "actors": 15000,
+  "humans": 14800,
+  "bot_identities": 200,
+  "duration_s": 38.8,
+  "client_requests": 44900,
+  "bot_advantage_ratio": {
+   "fcfs": null,
+   "naive": null,
+   "fairdrop": null,
+   "fcfs_live": 15.0
+  },
+  "human_win_rate": {
+   "fcfs": null,
+   "naive": null,
+   "fairdrop": null,
+   "fcfs_live": 0.02702702702702703
+  },
+  "bot_seat_share": {
+   "fcfs": null,
+   "naive": null,
+   "fairdrop": null,
+   "fcfs_live": 0.2
+  },
+  "integrity_ok": true,
+  "integrity_violations": {
+   "broken_merkle": 0,
+   "duplicate_entries": 0,
+   "duplicate_seats": 0,
+   "invalid_transitions": 0,
+   "missing_receipts": null,
+   "oversold": 0
+  },
+  "verified_by_reference_verifier": null,
+  "p99_ms": {
+   "/baseline/{id}/buy": 132.43
+  }
+ }
+}
