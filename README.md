@@ -32,14 +32,14 @@ Fair Drop takes speed out of the contest. Being fast, sending more requests, or 
 
 ```mermaid
 flowchart LR
-    A[Verified fan] -->|1 blind-signed ticket per drop| B[Enter with the ticket<br/>no session, unlinkable]
-    B --> C[(Redis: atomic<br/>spent-ticket set)]
+    A[Verified fan] -->|1 blind-signed ticket per drop| B["Enter with the ticket<br/>no session, unlinkable"]
+    B --> C[("Redis: atomic<br/>spent-ticket set")]
     C --> D[Sale closes]
-    D --> E[Entry list sealed<br/>Merkle root published]
-    E --> F[Seed revealed<br/>commit-reveal + optional drand]
-    F --> G[score = H&#40;seed + receipt&#41;<br/>lowest scores win seats]
-    G --> H[Waitlist, unclaimed seats<br/>cascade down]
-    D -.-> I[(Hash-chained audit log)]
+    D --> E["Entry list sealed<br/>Merkle root published"]
+    E --> F["Seed revealed<br/>commit-reveal + optional drand"]
+    F --> G["score = H(seed + receipt)<br/>lowest scores win seats"]
+    G --> H["Waitlist, unclaimed seats<br/>cascade down"]
+    D -.-> I[("Hash-chained audit log")]
     E -.-> I
     G -.-> I
 ```
@@ -144,16 +144,16 @@ Windows: use the matching `scripts\*.ps1`. What every test means in plain words:
 
 ```mermaid
 flowchart TB
-    U[Browser] --> N[nginx :8088<br/>rate limits, failover]
+    U[Browser] --> N["nginx :8088<br/>rate limits, failover"]
     N --> F[Next.js frontend]
     N --> A1[Go API 1]
     N --> A2[Go API 2]
     N --> A3[Go API 3]
-    A1 & A2 & A3 --> R[(Redis<br/>spent tickets, live counters)]
-    A1 & A2 & A3 --> P[(Postgres<br/>entries, audit chain)]
-    W[Worker<br/>seal, draw, cascade] --> R
+    A1 & A2 & A3 --> R[("Redis<br/>spent tickets, live counters")]
+    A1 & A2 & A3 --> P[("Postgres<br/>entries, audit chain")]
+    W["Worker<br/>seal, draw, cascade"] --> R
     W --> P
-    X[Attack engine<br/>Python + Locust] -->|HTTP like any client| N
+    X["Attack engine<br/>Python + Locust"] -->|HTTP like any client| N
     M[Prometheus] --> A1 & A2 & A3
     G[Grafana] --> M
 ```
@@ -174,6 +174,10 @@ flowchart TB
 | `tests/` | End-to-end smoke test |
 | `reports/` | Output of the seven experiments |
 | `docs/` | Architecture, cryptography, API, research, tests, runbooks |
+
+## License
+
+[MIT](LICENSE)
 
 ## Documentation
 
