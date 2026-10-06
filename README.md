@@ -12,6 +12,10 @@
 ![Docker](https://img.shields.io/badge/run-Docker_Compose-2496ED?logo=docker&logoColor=white)
 ![Postgres](https://img.shields.io/badge/db-Postgres_+_Redis-336791?logo=postgresql&logoColor=white)
 
+### [**Live demo: fair-dropp.vercel.app**](https://fair-dropp.vercel.app/)
+
+<sub>The live site is the frontend only (the 3D tour and pages). The Go backend and the attack simulation are not hosted, so the live arena and control room need the Docker setup below.</sub>
+
 <img src="docs/img/hero.png" alt="Fair Drop landing page: a 3D concert hall with the headline 500 seats, 50,000 fans, zero bot advantage" width="900">
 
 </div>
@@ -101,7 +105,7 @@ An independent judge, not the gate itself, labels every request as person or bot
 
 ## Quick start
 
-You only need **Docker** (Compose v2) and about 6 GB of memory for it.
+Just want to look? Open the [live frontend](https://fair-dropp.vercel.app/). To run the full system (backend, live arena, attacks), you only need **Docker** (Compose v2) and about 6 GB of memory for it.
 
 ```bash
 git clone https://github.com/ratneshdagli/Fair-Drop.git
